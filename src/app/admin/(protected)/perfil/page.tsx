@@ -49,11 +49,14 @@ export default async function ProfilePage() {
               )}
             </div>
             
-            <form action={uploadProfilePicture} className="w-full">
+            <form action={uploadProfilePicture} className="w-full flex flex-col gap-2">
               <label className="cursor-pointer bg-gray-50 border border-gray-300 hover:bg-gray-100 text-gray-700 py-2 px-4 rounded w-full flex items-center justify-center gap-2 text-sm transition-colors text-center">
-                <Upload size={16} /> Cambiar Foto
-                <input type="file" name="file" accept="image/*" className="hidden" onChange={(e) => e.target.form?.requestSubmit()} />
+                <Upload size={16} /> Seleccionar Foto
+                <input type="file" name="file" accept="image/*" className="hidden" />
               </label>
+              <button type="submit" className="bg-[#31573c] text-white py-1.5 px-4 rounded text-sm hover:bg-[#25452d]">
+                Subir
+              </button>
             </form>
             <p className="text-xs text-gray-400 mt-2 text-center">Soporta JPG, PNG o WebP. Máx 5MB.</p>
           </div>
