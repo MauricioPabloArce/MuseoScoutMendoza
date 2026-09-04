@@ -28,7 +28,6 @@ export async function updateProfile(formData: FormData) {
   })
 
   revalidatePath("/admin/perfil")
-  return { success: true }
 }
 
 export async function uploadProfilePicture(formData: FormData) {
@@ -59,5 +58,4 @@ export async function uploadProfilePicture(formData: FormData) {
   })
 
   revalidatePath("/admin/perfil")
-  return { success: true, url: fileUrl }
 }
