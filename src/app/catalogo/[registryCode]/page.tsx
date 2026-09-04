@@ -42,13 +42,20 @@ export default async function PieceDetailPage({ params }: { params: Promise<{ re
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row border border-[#d5cdbc]">
           {/* Columna Imágenes */}
           <div className="w-full md:w-1/2 bg-gray-100 flex flex-col items-center justify-center p-8 border-b md:border-b-0 md:border-r border-[#d5cdbc] min-h-[400px]">
-            {piece.media && piece.media.length > 0 ? (
+            {piece.mainImageUrl || (piece.media && piece.media.length > 0) ? (
               <div className="space-y-6 w-full flex flex-col items-center">
-                {piece.media.map((m, index) => (
+                {piece.mainImageUrl && (
+                  <img 
+                    src={piece.mainImageUrl} 
+                    alt={piece.title} 
+                    className="max-w-full max-h-[600px] object-contain drop-shadow-xl border-4 border-white"
+                  />
+                )}
+                {piece.media && piece.media.map((m, index) => (
                   <img 
                     key={m.id}
                     src={m.url} 
-                    alt={`${piece.title} - Imagen ${index + 1}`} 
+                    alt={`${piece.title} - Imagen adicional ${index + 1}`} 
                     className="max-w-full max-h-[600px] object-contain drop-shadow-xl border-4 border-white"
                   />
                 ))}

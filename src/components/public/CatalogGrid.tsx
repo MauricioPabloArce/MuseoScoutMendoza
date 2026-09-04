@@ -16,9 +16,9 @@ export default function CatalogGrid({ pieces }: { pieces: any[] }) {
             className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md hover:border-[#374151] transition-all group cursor-pointer flex flex-col"
           >
             <div className="h-48 bg-gray-200 relative overflow-hidden flex items-center justify-center text-gray-400">
-              {piece.media && piece.media.length > 0 ? (
+              {piece.mainImageUrl || (piece.media && piece.media.length > 0) ? (
                 <img 
-                  src={piece.media[0].url} 
+                  src={piece.mainImageUrl || piece.media[0].url} 
                   alt={piece.title} 
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
@@ -56,9 +56,9 @@ export default function CatalogGrid({ pieces }: { pieces: any[] }) {
             <div className="flex flex-col md:flex-row h-full overflow-hidden">
               {/* Media Section */}
               <div className="w-full md:w-1/2 bg-gray-100 flex-shrink-0 relative overflow-hidden flex items-center justify-center h-64 md:h-auto min-h-[300px]">
-                {selectedPiece.media && selectedPiece.media.length > 0 ? (
+                {selectedPiece.mainImageUrl || (selectedPiece.media && selectedPiece.media.length > 0) ? (
                   <img 
-                    src={selectedPiece.media[0].url} 
+                    src={selectedPiece.mainImageUrl || selectedPiece.media[0].url} 
                     alt={selectedPiece.title} 
                     className="w-full h-full object-contain p-4"
                   />
