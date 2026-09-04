@@ -5,13 +5,24 @@ import { User, Save, Upload, Image as ImageIcon } from "lucide-react"
 
 export default async function ProfilePage() {
   const session = await auth()
-  if (!session?.user?.id) return null
+  if (!session?.user?.id) return <div className="p-8 text-center text-red-500">No autorizado. Inicie sesión.</div>
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id }
-  })
+  let user = null;
+  try {
+    user = await prisma.user.findUnique({
+      where: { id: session.user.id }
+    })
+  } catch (error) {
+    return (
+      <div className="p-8 text-center text-red-500">
+        <h2 className="text-xl font-bold">Error de Base de Datos</h2>
+        <p>No se pudieron cargar tus datos. Es probable que la base de datos no esté actualizada.</p>
+        <p className="mt-4 text-sm text-gray-500">Asegúrate de ejecutar <code>npx prisma db push</code> en el servidor con la aplicación apagada.</p>
+      </div>
+    )
+  }
 
-  if (!user) return null
+  if (!user) return <div className="p-8 text-center text-red-500">Usuario no encontrado en la base de datos.</div>
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
