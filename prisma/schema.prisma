@@ -1,0 +1,236 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  member        MuseumMember?
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model MuseumMember {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  role      String   @default("COLLABORATOR") // ADMIN, COLLABORATOR
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permissions CategoryPermission[]
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  prefix      String   @unique // Ej. IN para Insignias
+  parentId    String?
+  order       Int      @default(0)
+  imageUrl    String?
+  isPublished Boolean  @default(false)
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  
+  fields      CategoryField[]
+  permissions CategoryPermission[]
+  pieces      MuseumPiece[]
+}
+
+model CategoryPermission {
+  id               String   @id @default(cuid())
+  memberId         String
+  categoryId       String
+  includeDescendants Boolean @default(false)
+  canView          Boolean  @default(true)
+  canCreate        Boolean  @default(false)
+  canEdit          Boolean  @default(false)
+  canArchive       Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  
+  member   MuseumMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  category Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, categoryId])
+}
+
+model FieldSection {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  fields      FieldDefinition[]
+}
+
+model FieldDefinition {
+  id          String   @id @default(cuid())
+  name        String
+  internalKey String   @unique
+  description String?
+  type        String   // TEXT, NUMBER, DATE, BOOLEAN, SELECT, MULTISELECT, FILE, IMAGE
+  isActive    Boolean  @default(true)
+  isRequired  Boolean  @default(false)
+  isPublic    Boolean  @default(false)
+  isSearchable Boolean @default(false)
+  order       Int      @default(0)
+  defaultValue String?
+  validation  String?  // JSON string
+  isGeneral   Boolean  @default(false)
+  sectionId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  section        FieldSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  options        FieldOption[]
+  categoryFields CategoryField[]
+  pieceValues    PieceFieldValue[]
+}
+
+model FieldOption {
+  id        String   @id @default(cuid())
+  fieldId   String
+  label     String
+  value     String
+  order     Int      @default(0)
+  
+  field     FieldDefinition @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+}
+
+model CategoryField {
+  id         String   @id @default(cuid())
+  categoryId String
+  fieldId    String
+  order      Int      @default(0)
+  
+  category   Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  field      FieldDefinition @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, fieldId])
+}
+
+model MuseumPiece {
+  id             String   @id @default(cuid())
+  registryCode   String   @unique
+  categoryId     String
+  title          String
+  mainImageUrl   String?
+  status         String   @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
+  registeredAt   DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdBy      String?  // memberId
+  updatedBy      String?  // memberId
+  
+  category       Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  fieldValues    PieceFieldValue[]
+  media          PieceMedia[]
+}
+
+model PieceFieldValue {
+  id         String   @id @default(cuid())
+  pieceId    String
+  fieldId    String
+  value      String   // Serialized value
+  
+  piece      MuseumPiece     @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  field      FieldDefinition @relation(fields: [fieldId], references: [id], onDelete: Restrict)
+
+  @@unique([pieceId, fieldId])
+}
+
+model PieceMedia {
+  id          String   @id @default(cuid())
+  pieceId     String
+  url         String
+  type        String   // IMAGE, FILE
+  description String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  
+  piece       MuseumPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+}
+
+model MuseumSettings {
+  id                  String   @id @default(cuid())
+  name                String   @default("Museo Scout Mendoza")
+  description         String?
+  registrySeparator   String   @default("-")
+  registrySequenceLen Int      @default(6)
+  registryUse4DigitYr Boolean  @default(true)
+  registryResetYearly Boolean  @default(false)
+  updatedAt           DateTime @updatedAt
+}
+
+model RegistrySequence {
+  id          String   @id @default(cuid())
+  year        Int
+  lastValue   Int      @default(0)
+  
+  @@unique([year])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entity     String
+  entityId   String
+  oldValue   String?  // JSON
+  newValue   String?  // JSON
+  createdAt  DateTime @default(now())
+}

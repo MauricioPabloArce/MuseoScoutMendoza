@@ -1,0 +1,160 @@
+"use client"
+
+import { useState } from "react"
+import { Users, Shield, Tag, X } from "lucide-react"
+import { updateUserRole, assignCategoryPermission, removeCategoryPermission } from "@/app/admin/(protected)/usuarios/actions"
+import toast from "react-hot-toast"
+
+export default function UserPermissionsClient({ users, categories }: { users: any[], categories: any[] }) {
+  const [selectedUser, setSelectedUser] = useState<any | null>(null)
+  const [newCatId, setNewCatId] = useState("")
+
+  const handleRoleChange = async (userId: string, role: string) => {
+    const res = await updateUserRole(userId, role)
+    if (res.success) {
+      toast.success("Rol actualizado")
+      setTimeout(() => window.location.reload(), 1000)
+    } else {
+      toast.error("Error actualizando rol")
+    }
+  }
+
+  const handleAssignCategory = async () => {
+    if (!selectedUser || !newCatId) return
+    const res = await assignCategoryPermission(selectedUser.id, newCatId)
+    if (res.success) {
+      setNewCatId("")
+      window.location.reload()
+    } else {
+      toast.error(res.error || "Error")
+    }
+  }
+
+  const handleRemovePermission = async (permId: string) => {
+    const res = await removeCategoryPermission(permId)
+    if (res.success) {
+      window.location.reload()
+    }
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th className="px-6 py-3 font-semibold text-gray-600">Nombre</th>
+              <th className="px-6 py-3 font-semibold text-gray-600">Email</th>
+              <th className="px-6 py-3 font-semibold text-gray-600">Rol</th>
+              <th className="px-6 py-3 font-semibold text-gray-600 text-center">Permisos Esp.</th>
+              <th className="px-6 py-3 font-semibold text-gray-600">Acciones</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {users.map(user => (
+              <tr key={user.id} className={`hover:bg-gray-50 ${selectedUser?.id === user.id ? 'bg-green-50' : ''}`}>
+                <td className="px-6 py-4 font-medium">{user.name || 'Sin nombre'}</td>
+                <td className="px-6 py-4 text-gray-500">{user.email}</td>
+                <td className="px-6 py-4">
+                  <select 
+                    className="border border-gray-300 rounded text-xs p-1"
+                    value={user.member?.role || 'VIEWER'}
+                    onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                  >
+                    <option value="VIEWER">Visitante</option>
+                    <option value="COLLABORATOR">Colaborador</option>
+                    <option value="ADMIN">Administrador</option>
+                  </select>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
+                    {user.member?.permissions?.length || 0} ramas
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <button 
+                    onClick={() => setSelectedUser(user)}
+                    className="text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    Configurar
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div>
+        {selectedUser ? (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-6">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="font-bold text-lg text-gray-800">{selectedUser.name}</h3>
+                <p className="text-sm text-gray-500">{selectedUser.member?.role}</p>
+              </div>
+              <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-gray-600"><X size={20}/></button>
+            </div>
+            
+            <div className="mb-6">
+              <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                <Shield size={16} className="text-[#1d4328]" /> Acceso Permitido
+              </h4>
+              {selectedUser.member?.role === 'ADMIN' ? (
+                <p className="text-sm text-green-700 bg-green-50 p-2 rounded">
+                  Tiene acceso total a todo el árbol de categorías.
+                </p>
+              ) : selectedUser.member?.role === 'COLLABORATOR' ? (
+                <div className="space-y-2">
+                  {selectedUser.member?.permissions?.map((perm: any) => (
+                    <div key={perm.id} className="flex justify-between items-center text-sm bg-gray-50 p-2 rounded border border-gray-100">
+                      <span className="flex items-center gap-2"><Tag size={14} className="text-amber-600" /> {perm.category.name}</span>
+                      <button onClick={() => handleRemovePermission(perm.id)} className="text-red-500 hover:text-red-700"><X size={14}/></button>
+                    </div>
+                  ))}
+                  {(!selectedUser.member?.permissions || selectedUser.member.permissions.length === 0) && (
+                    <p className="text-sm text-amber-600 bg-amber-50 p-2 rounded">
+                      No tiene ramas asignadas. No podrá editar ninguna pieza.
+                    </p>
+                  )}
+                  
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Asignar nueva rama:</label>
+                    <div className="flex gap-2">
+                      <select 
+                        className="flex-1 border border-gray-300 rounded text-sm p-1.5"
+                        value={newCatId}
+                        onChange={(e) => setNewCatId(e.target.value)}
+                      >
+                        <option value="">Seleccionar categoría...</option>
+                        {categories.map((c: any) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                      <button 
+                        onClick={handleAssignCategory}
+                        disabled={!newCatId}
+                        className="bg-[#1d4328] hover:bg-[#255633] text-white px-3 py-1.5 rounded text-sm disabled:opacity-50"
+                      >
+                        Agregar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 bg-gray-50 p-2 rounded">
+                  Rol de solo lectura. No puede gestionar piezas.
+                </p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="bg-gray-50 rounded-lg border border-gray-200 border-dashed p-8 text-center text-gray-500 h-full flex flex-col items-center justify-center">
+            <Users size={32} className="mb-2 opacity-50" />
+            <p>Selecciona un usuario de la lista para configurar sus permisos por categoría.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
