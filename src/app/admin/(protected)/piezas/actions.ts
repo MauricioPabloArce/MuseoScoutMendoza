@@ -38,13 +38,15 @@ export async function getFieldsForCategory(categoryId: string) {
 
 // Atomic generation of the registry code
 async function generateRegistryCode(categoryId: string): Promise<string> {
-  let category = await prisma.category.findUnique({ where: { id: categoryId } })
-  if (!category) throw new Error("Categoría no encontrada")
+  const initialCategory = await prisma.category.findUnique({ where: { id: categoryId } })
+  if (!initialCategory) throw new Error("Categoría no encontrada")
+  
+  let currentCategory = initialCategory;
   
   // Encontrar la categoría raíz (General)
-  while (category.parentId) {
-    const parent = await prisma.category.findUnique({ where: { id: category.parentId } })
-    if (parent) category = parent
+  while (currentCategory.parentId) {
+    const parent = await prisma.category.findUnique({ where: { id: currentCategory.parentId } })
+    if (parent) currentCategory = parent
     else break
   }
 
@@ -54,7 +56,7 @@ async function generateRegistryCode(categoryId: string): Promise<string> {
     registryUse4DigitYr: true
   }
 
-  const prefix = category.prefix || "XX"
+  const prefix = currentCategory.prefix || "XX"
   const currentYear = new Date().getFullYear()
   const yearStr = settings.registryUse4DigitYr ? currentYear.toString() : currentYear.toString().slice(-2)
 

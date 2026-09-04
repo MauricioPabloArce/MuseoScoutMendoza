@@ -230,7 +230,7 @@ export default function CategoryTree({ data, availableFields = [] }: { data: any
                     autoFocus
                     required
                     type="text" 
-                    className="w-full border-gray-300 rounded p-2"
+                    className="w-full border border-gray-300 rounded p-2"
                     value={catName}
                     onChange={e => {
                       setCatName(e.target.value)
@@ -249,7 +249,7 @@ export default function CategoryTree({ data, availableFields = [] }: { data: any
                     )}
                     <input 
                       type="text" 
-                      className={`w-full border-gray-300 p-2 uppercase ${targetParentId && !editCategoryId ? 'rounded-r-md border-l-0 focus:ring-0 focus:border-gray-300' : 'rounded'}`}
+                      className={`w-full border border-gray-300 p-2 uppercase ${targetParentId && !editCategoryId ? 'rounded-r-md border-l-0 focus:ring-0 focus:border-gray-300' : 'rounded'}`}
                       value={catPrefix.replace(new RegExp(`^${tree.flatMap(n => [n, ...n.children]).find(n => n.id === targetParentId)?.prefix || ''}`), '')}
                       onChange={e => {
                         const parentPrefix = (targetParentId && !editCategoryId) ? (tree.flatMap(n => [n, ...n.children]).find(n => n.id === targetParentId)?.prefix || '') : ''
@@ -266,7 +266,7 @@ export default function CategoryTree({ data, availableFields = [] }: { data: any
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Descripción de la Categoría (Opcional)</label>
                 <textarea 
-                  className="w-full border-gray-300 rounded p-2 min-h-[80px]"
+                  className="w-full border border-gray-300 rounded p-2 min-h-[80px]"
                   value={catDescription}
                   onChange={e => setCatDescription(e.target.value)}
                   placeholder="Breve descripción que se mostrará en el catálogo al público..."

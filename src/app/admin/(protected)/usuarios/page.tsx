@@ -7,6 +7,11 @@ export default async function UsuariosPage() {
   const users = await getUsersWithPermissions()
   const categories = await getCategories()
 
+  const handleCreateDummyUser = async () => {
+    "use server";
+    await createDummyUser();
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-2">
@@ -17,7 +22,7 @@ export default async function UsuariosPage() {
           <h1 className="text-3xl font-bold text-gray-800">Usuarios y Accesos</h1>
         </div>
         
-        <form action={createDummyUser}>
+        <form action={handleCreateDummyUser}>
           <button type="submit" className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded flex items-center gap-2 text-sm shadow-sm">
             <UserPlus size={16} /> Crear Usuario de Prueba
           </button>

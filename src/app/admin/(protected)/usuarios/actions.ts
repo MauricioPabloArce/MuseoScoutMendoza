@@ -86,3 +86,24 @@ export async function createDummyUser() {
   revalidatePath("/admin/usuarios")
   return { success: true }
 }
+
+export async function deleteUser(userId: string) {
+  const session = await auth()
+  if (!session?.user) throw new Error("No autorizado")
+
+  const actingUser = await prisma.museumMember.findUnique({ where: { userId: session.user.id } })
+  if (actingUser?.role !== 'ADMIN' && session.user.id !== 'dev-admin-id') {
+      throw new Error("Solo administradores pueden eliminar usuarios")
+  }
+
+  // Prevenir que el admin se borre a si mismo
+  if (session.user.id === userId) {
+    throw new Error("No puedes eliminar tu propia cuenta")
+  }
+
+  await prisma.user.delete({
+    where: { id: userId }
+  })
+  revalidatePath("/admin/usuarios")
+  return { success: true }
+}

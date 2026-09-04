@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Users, Shield, Tag, X } from "lucide-react"
-import { updateUserRole, assignCategoryPermission, removeCategoryPermission } from "@/app/admin/(protected)/usuarios/actions"
+import { Users, Shield, Tag, X, Trash2 } from "lucide-react"
+import { updateUserRole, assignCategoryPermission, removeCategoryPermission, deleteUser } from "@/app/admin/(protected)/usuarios/actions"
 import toast from "react-hot-toast"
 
 export default function UserPermissionsClient({ users, categories }: { users: any[], categories: any[] }) {
@@ -16,6 +16,20 @@ export default function UserPermissionsClient({ users, categories }: { users: an
       setTimeout(() => window.location.reload(), 1000)
     } else {
       toast.error("Error actualizando rol")
+    }
+  }
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm("¿Estás seguro de que deseas eliminar este usuario? Esta acción es irreversible.")) return
+    
+    try {
+      const res = await deleteUser(userId)
+      if (res.success) {
+        toast.success("Usuario eliminado correctamente")
+        if (selectedUser?.id === userId) setSelectedUser(null)
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Error al eliminar usuario")
     }
   }
 
@@ -72,12 +86,21 @@ export default function UserPermissionsClient({ users, categories }: { users: an
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  <button 
-                    onClick={() => setSelectedUser(user)}
-                    className="text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    Configurar
-                  </button>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => setSelectedUser(user)}
+                      className="text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Configurar
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteUser(user.id)}
+                      className="text-red-500 hover:text-red-700 font-medium"
+                      title="Eliminar usuario"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
