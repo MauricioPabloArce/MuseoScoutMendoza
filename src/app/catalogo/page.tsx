@@ -4,6 +4,7 @@ import Footer from "@/components/public/Footer"
 
 import CatalogFilters from "@/components/public/CatalogFilters"
 import CatalogGrid from "@/components/public/CatalogGrid"
+import CategorySidebar from "@/components/public/CategorySidebar"
 
 export default async function CatalogoPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const resolvedParams = await searchParams;
@@ -21,39 +22,6 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Pro
       return [...acc, child.id, ...getDescendantIds(child.id)]
     }, [] as string[])
   }
-
-  // Generar indentación en lugar de rutas completas para el dropdown
-  const getCategoryIndentName = (categoryId: string, level = 0): string => {
-    const cat = allCategories.find(c => c.id === categoryId)
-    if (!cat) return ""
-    if (!cat.parentId) return cat.name
-    return getCategoryIndentName(cat.parentId, level + 1)
-  }
-
-  const structuredCategories = allCategories.map(cat => {
-    let depth = 0
-    let curr = cat
-    while (curr.parentId) {
-      depth++
-      const parent = allCategories.find(c => c.id === curr.parentId)
-      if (parent) curr = parent
-      else break
-    }
-    return {
-      ...cat,
-      indentName: `${'\u00A0\u00A0\u00A0\u00A0'.repeat(depth)}${cat.name}`,
-      depth
-    }
-  }).sort((a, b) => {
-    // Para mantener el orden jerárquico, necesitamos reconstruir la ruta completa
-    const getPath = (id: string): string => {
-      const c = allCategories.find(x => x.id === id)
-      if(!c) return ""
-      if(!c.parentId) return c.name
-      return getPath(c.parentId) + " > " + c.name
-    }
-    return getPath(a.id).localeCompare(getPath(b.id))
-  })
 
   const whereClause: any = { status: 'PUBLISHED' };
   if (categoria) {
@@ -80,26 +48,50 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Pro
     }
   })
 
+  // Get active category name for breadcrumb/title
+  const activeCategory = categoria ? allCategories.find(c => c.id === categoria) : null;
+
   return (
-    <div className="min-h-screen bg-[#eae6df] font-sans">
-      <header className="bg-[#1f2937] text-[#f5f2eb] py-4 px-6 flex justify-between items-center shadow-md">
-        <Link href="/" className="flex items-center gap-4">
-          <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain" />
+    <div className="min-h-screen bg-[#eae6df] font-sans flex flex-col">
+      <header className="bg-[#1f2937] text-[#f5f2eb] py-4 px-6 flex justify-between items-center shadow-md sticky top-0 z-50">
+        <Link href="/" className="flex items-center gap-4 group">
+          <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain transition-transform group-hover:scale-105" />
           <h1 className="text-xl font-serif font-bold tracking-wider hidden sm:block">MUSEO SCOUT MENDOZA</h1>
         </Link>
-        <Link href="/" className="text-sm border border-gray-400 px-4 py-2 rounded hover:bg-[#374151] transition-colors">
+        <Link href="/" className="text-sm border border-gray-500 text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-800 hover:text-white transition-colors">
           Volver al Inicio
         </Link>
       </header>
 
-      <main className="max-w-7xl mx-auto py-12 px-6 flex flex-col">
-        <CatalogFilters categories={structuredCategories} initialQ={q} />
+      <main className="flex-1 w-full max-w-[1400px] mx-auto py-8 px-4 sm:px-6 lg:px-8">
         
-        <div>
-          <h2 className="text-2xl font-serif font-bold text-gray-800 mb-6 hidden">Catálogo General</h2>
-          <CatalogGrid pieces={pieces} />
+        {/* Top Search Bar */}
+        <CatalogFilters initialQ={q} />
+
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          
+          {/* Sidebar */}
+          <aside className="w-full lg:w-72 flex-shrink-0">
+            <CategorySidebar categories={allCategories} />
+          </aside>
+
+          {/* Main Content */}
+          <div className="flex-1 w-full min-w-0">
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h2 className="text-2xl font-serif font-bold text-gray-900">
+                {activeCategory ? `Explorando: ${activeCategory.name}` : 'Catálogo General'}
+                <span className="ml-3 text-sm font-sans font-normal text-gray-500 bg-gray-200 px-3 py-1 rounded-full">
+                  {pieces.length} pieza{pieces.length !== 1 ? 's' : ''}
+                </span>
+              </h2>
+            </div>
+            
+            <CatalogGrid pieces={pieces} />
+          </div>
+          
         </div>
       </main>
+      
       <Footer />
     </div>
   )

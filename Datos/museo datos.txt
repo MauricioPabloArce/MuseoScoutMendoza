@@ -1,3 +1,14 @@
 Yjjx6^14EzwjQjmm
 
 museo contabo
+
+cd /home/museo/app
+
+su - museo
+cd /home/museo/app
+
+
+cd /home/museo/app
+git pull origin feature/initial-platform
+npm run build
+pm2 restart museo-scout
