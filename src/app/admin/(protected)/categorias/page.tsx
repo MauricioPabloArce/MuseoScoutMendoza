@@ -1,4 +1,4 @@
-import { getCategories } from "./actions"
+import { getCategories, getCollaborators } from "./actions"
 import { getFields } from "@/app/admin/(protected)/campos/actions"
 import CategoryTree from "@/components/admin/CategoryTree"
 import { Layers } from "lucide-react"
@@ -6,6 +6,7 @@ import { Layers } from "lucide-react"
 export default async function CategoriasPage() {
   const categories = await getCategories()
   const allFields = await getFields()
+  const members = await getCollaborators()
   const specificFields = allFields.filter(f => !f.isGeneral)
 
   return (
@@ -20,7 +21,7 @@ export default async function CategoriasPage() {
         Administra la estructura jerárquica del acervo del museo.
       </p>
 
-      <CategoryTree data={categories} availableFields={specificFields} />
+      <CategoryTree data={categories} availableFields={specificFields} members={members} />
     </div>
   )
 }

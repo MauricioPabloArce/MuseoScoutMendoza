@@ -37,7 +37,7 @@ function buildTree(categories: any[]): TreeNode[] {
   return roots
 }
 
-export default function CategoryTree({ data, availableFields = [] }: { data: any[], availableFields?: any[] }) {
+export default function CategoryTree({ data, availableFields = [], members = [] }: { data: any[], availableFields?: any[], members?: any[] }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [modalOpen, setModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
@@ -49,6 +49,7 @@ export default function CategoryTree({ data, availableFields = [] }: { data: any
   const [catPrefix, setCatPrefix] = useState("")
   const [catDescription, setCatDescription] = useState("")
   const [catImageUrl, setCatImageUrl] = useState<string | null>(null)
+  const [catLeaderId, setCatLeaderId] = useState<string>("")
   const [file, setFile] = useState<File | null>(null)
   const [selectedFields, setSelectedFields] = useState<string[]>([])
   const [isSaving, setIsSaving] = useState(false)
@@ -62,6 +63,7 @@ export default function CategoryTree({ data, availableFields = [] }: { data: any
       setCatPrefix(editNode.prefix)
       setCatDescription(editNode.description || "")
       setCatImageUrl(editNode.imageUrl || null)
+      setCatLeaderId(editNode.leaderId || "")
       setFile(null)
       setTargetParentId(editNode.parentId || undefined)
       setSelectedFields(editNode.fields?.map((f: any) => f.fieldId) || [])
@@ -73,6 +75,7 @@ export default function CategoryTree({ data, availableFields = [] }: { data: any
       setCatPrefix(parentPrefix)
       setCatDescription("")
       setCatImageUrl(null)
+      setCatLeaderId("")
       setFile(null)
       setSelectedFields([])
     }
@@ -100,9 +103,9 @@ export default function CategoryTree({ data, availableFields = [] }: { data: any
 
     let res
     if (editCategoryId) {
-      res = await updateCategory(editCategoryId, { name: catName, slug, prefix, description: catDescription, parentId: targetParentId, fieldIds: selectedFields, imageUrl: finalImageUrl || undefined })
+      res = await updateCategory(editCategoryId, { name: catName, slug, prefix, description: catDescription, parentId: targetParentId, fieldIds: selectedFields, imageUrl: finalImageUrl || undefined, leaderId: catLeaderId || undefined })
     } else {
-      res = await createCategory({ name: catName, slug, prefix, description: catDescription, parentId: targetParentId, fieldIds: selectedFields, imageUrl: finalImageUrl || undefined })
+      res = await createCategory({ name: catName, slug, prefix, description: catDescription, parentId: targetParentId, fieldIds: selectedFields, imageUrl: finalImageUrl || undefined, leaderId: catLeaderId || undefined })
     }
     
     setIsSaving(false)
@@ -280,6 +283,23 @@ export default function CategoryTree({ data, availableFields = [] }: { data: any
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Prefijo final: <strong className="text-gray-700">{catPrefix}</strong></p>
                 </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Líder del Proyecto (Opcional)</label>
+                <select 
+                  className="w-full border border-gray-300 rounded p-2 text-gray-700 bg-white"
+                  value={catLeaderId}
+                  onChange={e => setCatLeaderId(e.target.value)}
+                >
+                  <option value="">-- Sin asignar --</option>
+                  {members.map(member => (
+                    <option key={member.id} value={member.id}>
+                      {member.user?.name || member.user?.email} ({member.role})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">El líder del proyecto se mostrará públicamente en el catálogo de esta categoría.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

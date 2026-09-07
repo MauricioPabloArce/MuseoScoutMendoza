@@ -13,7 +13,14 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Pro
 
   const allCategories = await prisma.category.findMany({
     where: { isPublished: true, isArchived: false },
-    orderBy: { name: 'asc' }
+    orderBy: { name: 'asc' },
+    include: {
+      leader: {
+        include: {
+          user: true
+        }
+      }
+    }
   })
 
   const getDescendantIds = (parentId: string): string[] => {
@@ -92,6 +99,16 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Pro
                 )}
                 <div className="p-6 sm:p-8">
                   <h2 className="text-3xl font-serif font-bold text-gray-900 mb-3">{activeCategory.name}</h2>
+                  {activeCategory.leader && (
+                    <div className="flex items-center gap-2 mb-4 bg-gray-50 inline-flex px-3 py-1.5 rounded-full border border-gray-200">
+                      <div className="w-6 h-6 rounded-full bg-[#1d4328] flex items-center justify-center text-white text-xs font-bold">
+                        {(activeCategory.leader.user?.name?.[0] || activeCategory.leader.user?.email?.[0] || 'L').toUpperCase()}
+                      </div>
+                      <span className="text-sm font-medium text-gray-700">
+                        Líder del proyecto: <span className="font-bold">{activeCategory.leader.user?.name || activeCategory.leader.user?.email}</span>
+                      </span>
+                    </div>
+                  )}
                   {activeCategory.description && (
                     <p className="text-gray-600 leading-relaxed text-lg max-w-4xl">{activeCategory.description}</p>
                   )}
@@ -125,8 +142,18 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Pro
                       </div>
                       <div className="p-4">
                         <h4 className="font-bold text-lg text-gray-900 group-hover:text-[#1d4328] transition-colors">{sub.name}</h4>
+                        {sub.leader && (
+                          <div className="flex items-center gap-1.5 mt-2">
+                            <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-[10px] font-bold">
+                              {(sub.leader.user?.name?.[0] || sub.leader.user?.email?.[0] || 'L').toUpperCase()}
+                            </div>
+                            <span className="text-xs text-gray-600 font-medium truncate">
+                              Líder: {sub.leader.user?.name || sub.leader.user?.email?.split('@')[0]}
+                            </span>
+                          </div>
+                        )}
                         {sub.description && (
-                          <p className="text-sm text-gray-500 mt-1 line-clamp-2">{sub.description}</p>
+                          <p className="text-sm text-gray-500 mt-2 line-clamp-2">{sub.description}</p>
                         )}
                       </div>
                     </Link>

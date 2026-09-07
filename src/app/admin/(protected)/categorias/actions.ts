@@ -19,16 +19,39 @@ export type CategoryWithPieceCount = {
 export async function getCategories(): Promise<any[]> {
   const categories = await prisma.category.findMany({
     where: { isArchived: false },
-    orderBy: { name: 'asc' },
     include: {
       _count: {
         select: { pieces: true }
       },
-      fields: true
-    }
+      fields: true,
+      leader: {
+        include: {
+          user: true
+        }
+      }
+    },
+    orderBy: [
+      { order: 'asc' },
+      { name: 'asc' }
+    ]
   })
   
   return categories
+}
+
+export async function getCollaborators() {
+  const session = await auth()
+  if (!session?.user) return []
+  
+  const members = await prisma.museumMember.findMany({
+    include: {
+      user: true
+    },
+    orderBy: {
+      user: { name: 'asc' }
+    }
+  })
+  return members
 }
 
 export async function uploadCategoryImage(formData: FormData) {
@@ -52,7 +75,7 @@ export async function uploadCategoryImage(formData: FormData) {
   return { url: `/uploads/categories/${filename}` }
 }
 
-export async function createCategory(data: { name: string; slug: string; prefix: string; description?: string; parentId?: string; fieldIds?: string[]; imageUrl?: string }) {
+export async function createCategory(data: { name: string; slug: string; prefix: string; description?: string; parentId?: string; fieldIds?: string[]; imageUrl?: string; leaderId?: string }) {
   const session = await auth()
   if (!session?.user) throw new Error("No autorizado")
 
@@ -65,6 +88,7 @@ export async function createCategory(data: { name: string; slug: string; prefix:
         description: data.description || null,
         parentId: data.parentId || null,
         imageUrl: data.imageUrl || null,
+        leaderId: data.leaderId || null,
         isPublished: false,
         fields: data.fieldIds && data.fieldIds.length > 0 ? {
           create: data.fieldIds.map((id, i) => ({
@@ -84,7 +108,7 @@ export async function createCategory(data: { name: string; slug: string; prefix:
   }
 }
 
-export async function updateCategory(id: string, data: { name: string; slug: string; prefix: string; description?: string; parentId?: string; fieldIds?: string[]; imageUrl?: string }) {
+export async function updateCategory(id: string, data: { name: string; slug: string; prefix: string; description?: string; parentId?: string; fieldIds?: string[]; imageUrl?: string; leaderId?: string }) {
   const session = await auth()
   if (!session?.user) throw new Error("No autorizado")
 
@@ -102,6 +126,7 @@ export async function updateCategory(id: string, data: { name: string; slug: str
         description: data.description || null,
         parentId: data.parentId || null,
         imageUrl: data.imageUrl || null,
+        leaderId: data.leaderId || null,
         fields: data.fieldIds && data.fieldIds.length > 0 ? {
           create: data.fieldIds.map((fid, i) => ({
             fieldId: fid,

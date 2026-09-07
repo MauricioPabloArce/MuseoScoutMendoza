@@ -68,6 +68,7 @@ model MuseumMember {
 
   user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   permissions CategoryPermission[]
+  ledCategories Category[]         @relation("CategoryLeader")
 }
 
 model Category {
@@ -79,6 +80,7 @@ model Category {
   parentId    String?
   order       Int      @default(0)
   imageUrl    String?
+  leaderId    String?
   isPublished Boolean  @default(false)
   isArchived  Boolean  @default(false)
   createdAt   DateTime @default(now())
@@ -86,6 +88,7 @@ model Category {
 
   parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children    Category[] @relation("CategoryHierarchy")
+  leader      MuseumMember? @relation("CategoryLeader", fields: [leaderId], references: [id], onDelete: SetNull)
   
   fields      CategoryField[]
   permissions CategoryPermission[]
