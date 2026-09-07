@@ -1,13 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { Users, Shield, Tag, X, Trash2 } from "lucide-react"
+import { Users, Shield, Tag, X, Trash2, AlertTriangle } from "lucide-react"
 import { updateUserRole, assignCategoryPermission, removeCategoryPermission, deleteUser } from "@/app/admin/(protected)/usuarios/actions"
 import toast from "react-hot-toast"
 
 export default function UserPermissionsClient({ users, categories }: { users: any[], categories: any[] }) {
   const [selectedUser, setSelectedUser] = useState<any | null>(null)
   const [newCatId, setNewCatId] = useState("")
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<{id: string, name: string} | null>(null)
 
   const handleRoleChange = async (userId: string, role: string) => {
     const res = await updateUserRole(userId, role)
@@ -19,14 +21,17 @@ export default function UserPermissionsClient({ users, categories }: { users: an
     }
   }
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm("¿Estás seguro de que deseas eliminar este usuario? Esta acción es irreversible.")) return
+  const handleDeleteConfirm = async () => {
+    if (!userToDelete) return
     
     try {
-      const res = await deleteUser(userId)
+      const res = await deleteUser(userToDelete.id)
       if (res.success) {
         toast.success("Usuario eliminado correctamente")
-        if (selectedUser?.id === userId) setSelectedUser(null)
+        if (selectedUser?.id === userToDelete.id) setSelectedUser(null)
+        setDeleteModalOpen(false)
+        setUserToDelete(null)
+        setTimeout(() => window.location.reload(), 1000)
       }
     } catch (error: any) {
       toast.error(error.message || "Error al eliminar usuario")
@@ -94,7 +99,10 @@ export default function UserPermissionsClient({ users, categories }: { users: an
                       Configurar
                     </button>
                     <button 
-                      onClick={() => handleDeleteUser(user.id)}
+                      onClick={() => {
+                        setUserToDelete({ id: user.id, name: user.name || 'Sin nombre' })
+                        setDeleteModalOpen(true)
+                      }}
                       className="text-red-500 hover:text-red-700 font-medium"
                       title="Eliminar usuario"
                     >
@@ -178,6 +186,47 @@ export default function UserPermissionsClient({ users, categories }: { users: an
           </div>
         )}
       </div>
+
+      {/* Delete Modal */}
+      {deleteModalOpen && userToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+              <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                <AlertTriangle className="text-red-500" size={18} />
+                Confirmar Eliminación
+              </h3>
+              <button onClick={() => setDeleteModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+            </div>
+            
+            <div className="p-6">
+              <p className="text-gray-700 mb-2">
+                ¿Estás seguro que deseas eliminar al usuario <strong>"{userToDelete.name}"</strong>?
+              </p>
+              <p className="text-sm text-red-600 font-medium">
+                Esta acción es irreversible y eliminará todos sus permisos asociados.
+              </p>
+            </div>
+
+            <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+              <button 
+                type="button" 
+                onClick={() => setDeleteModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 rounded text-gray-700 bg-white hover:bg-gray-50 text-sm font-medium"
+              >
+                Cancelar
+              </button>
+              <button 
+                type="button"
+                onClick={handleDeleteConfirm}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm font-medium"
+              >
+                Eliminar Definitivamente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
