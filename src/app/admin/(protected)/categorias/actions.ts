@@ -31,7 +31,28 @@ export async function getCategories(): Promise<any[]> {
   return categories
 }
 
-export async function createCategory(data: { name: string; slug: string; prefix: string; description?: string; parentId?: string; fieldIds?: string[] }) {
+export async function uploadCategoryImage(formData: FormData) {
+  const session = await auth()
+  if (!session?.user) throw new Error("No autorizado")
+
+  const file = formData.get("file") as File
+  if (!file) return { error: "No file" }
+
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+  const buffer = Buffer.from(await file.arrayBuffer())
+  const filename = `cat-${Date.now()}.${ext}`
+  
+  const fs = await import('fs/promises')
+  const path = await import('path')
+  
+  const uploadDir = path.join(process.cwd(), `public/uploads/categories`)
+  await fs.mkdir(uploadDir, { recursive: true })
+  await fs.writeFile(path.join(uploadDir, filename), buffer)
+
+  return { url: `/uploads/categories/${filename}` }
+}
+
+export async function createCategory(data: { name: string; slug: string; prefix: string; description?: string; parentId?: string; fieldIds?: string[]; imageUrl?: string }) {
   const session = await auth()
   if (!session?.user) throw new Error("No autorizado")
 
@@ -43,6 +64,7 @@ export async function createCategory(data: { name: string; slug: string; prefix:
         prefix: data.prefix,
         description: data.description || null,
         parentId: data.parentId || null,
+        imageUrl: data.imageUrl || null,
         isPublished: false,
         fields: data.fieldIds && data.fieldIds.length > 0 ? {
           create: data.fieldIds.map((id, i) => ({
@@ -62,7 +84,7 @@ export async function createCategory(data: { name: string; slug: string; prefix:
   }
 }
 
-export async function updateCategory(id: string, data: { name: string; slug: string; prefix: string; description?: string; parentId?: string; fieldIds?: string[] }) {
+export async function updateCategory(id: string, data: { name: string; slug: string; prefix: string; description?: string; parentId?: string; fieldIds?: string[]; imageUrl?: string }) {
   const session = await auth()
   if (!session?.user) throw new Error("No autorizado")
 
@@ -79,6 +101,7 @@ export async function updateCategory(id: string, data: { name: string; slug: str
         prefix: data.prefix,
         description: data.description || null,
         parentId: data.parentId || null,
+        imageUrl: data.imageUrl || null,
         fields: data.fieldIds && data.fieldIds.length > 0 ? {
           create: data.fieldIds.map((fid, i) => ({
             fieldId: fid,

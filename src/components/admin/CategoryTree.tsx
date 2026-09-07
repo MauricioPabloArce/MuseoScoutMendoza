@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { ChevronRight, ChevronDown, Folder, FolderOpen, MoreVertical, Plus, Edit, Eye, EyeOff, Archive, Save, Trash2, AlertTriangle } from "lucide-react"
 import type { CategoryWithPieceCount } from "@/app/admin/(protected)/categorias/actions"
-import { togglePublishCategory, archiveCategory, deleteCategory, createCategory, updateCategory } from "@/app/admin/(protected)/categorias/actions"
+import { uploadCategoryImage, togglePublishCategory, archiveCategory, deleteCategory, createCategory, updateCategory } from "@/app/admin/(protected)/categorias/actions"
 import toast from "react-hot-toast"
 
 interface TreeNode {
@@ -48,7 +48,10 @@ export default function CategoryTree({ data, availableFields = [] }: { data: any
   const [catName, setCatName] = useState("")
   const [catPrefix, setCatPrefix] = useState("")
   const [catDescription, setCatDescription] = useState("")
+  const [catImageUrl, setCatImageUrl] = useState<string | null>(null)
+  const [file, setFile] = useState<File | null>(null)
   const [selectedFields, setSelectedFields] = useState<string[]>([])
+  const [isSaving, setIsSaving] = useState(false)
   
   const tree = buildTree(data)
 
@@ -58,6 +61,8 @@ export default function CategoryTree({ data, availableFields = [] }: { data: any
       setCatName(editNode.name)
       setCatPrefix(editNode.prefix)
       setCatDescription(editNode.description || "")
+      setCatImageUrl(editNode.imageUrl || null)
+      setFile(null)
       setTargetParentId(editNode.parentId || undefined)
       setSelectedFields(editNode.fields?.map((f: any) => f.fieldId) || [])
     } else {
@@ -67,6 +72,8 @@ export default function CategoryTree({ data, availableFields = [] }: { data: any
       const parentPrefix = parentId ? tree.flatMap(n => [n, ...n.children]).find(n => n.id === parentId)?.prefix || "" : ""
       setCatPrefix(parentPrefix)
       setCatDescription("")
+      setCatImageUrl(null)
+      setFile(null)
       setSelectedFields([])
     }
     setModalOpen(true)
@@ -75,18 +82,30 @@ export default function CategoryTree({ data, availableFields = [] }: { data: any
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!catName) return
+    setIsSaving(true)
     const parentPrefix = (targetParentId && !editCategoryId) ? (tree.flatMap(n => [n, ...n.children]).find(n => n.id === targetParentId)?.prefix || '') : ''
     const generatedPrefix = catName.substring(0, 2).toUpperCase()
     const prefix = catPrefix || (parentPrefix + generatedPrefix)
     const slug = catName.toLowerCase().replace(/[^a-z0-9]/g, '-')
     
+    let finalImageUrl = catImageUrl
+    if (file) {
+      const formData = new FormData()
+      formData.append("file", file)
+      const uploadRes = await uploadCategoryImage(formData)
+      if (uploadRes.url) {
+        finalImageUrl = uploadRes.url
+      }
+    }
+
     let res
     if (editCategoryId) {
-      res = await updateCategory(editCategoryId, { name: catName, slug, prefix, description: catDescription, parentId: targetParentId, fieldIds: selectedFields })
+      res = await updateCategory(editCategoryId, { name: catName, slug, prefix, description: catDescription, parentId: targetParentId, fieldIds: selectedFields, imageUrl: finalImageUrl || undefined })
     } else {
-      res = await createCategory({ name: catName, slug, prefix, description: catDescription, parentId: targetParentId, fieldIds: selectedFields })
+      res = await createCategory({ name: catName, slug, prefix, description: catDescription, parentId: targetParentId, fieldIds: selectedFields, imageUrl: finalImageUrl || undefined })
     }
     
+    setIsSaving(false)
     if (res?.error) {
       toast.error(res.error)
     } else {
@@ -263,14 +282,47 @@ export default function CategoryTree({ data, availableFields = [] }: { data: any
                 </div>
               </div>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción de la Categoría (Opcional)</label>
-                <textarea 
-                  className="w-full border border-gray-300 rounded p-2 min-h-[80px]"
-                  value={catDescription}
-                  onChange={e => setCatDescription(e.target.value)}
-                  placeholder="Breve descripción que se mostrará en el catálogo al público..."
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Descripción de la Categoría (Opcional)</label>
+                  <textarea 
+                    className="w-full border border-gray-300 rounded p-2 min-h-[120px]"
+                    value={catDescription}
+                    onChange={e => setCatDescription(e.target.value)}
+                    placeholder="Breve descripción que se mostrará en el catálogo al público..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Imagen de Portada (Opcional)</label>
+                  <div className="flex flex-col gap-3 border-2 border-dashed border-gray-300 p-3 rounded-lg bg-gray-50 items-center justify-center min-h-[120px]">
+                    {(file || catImageUrl) ? (
+                      <div className="relative w-full h-full flex flex-col items-center">
+                        <img 
+                          src={file ? URL.createObjectURL(file) : (catImageUrl as string)} 
+                          alt="Preview" 
+                          className="h-24 w-auto object-contain rounded border border-gray-200 bg-white"
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => { setFile(null); setCatImageUrl(null) }} 
+                          className="text-red-500 hover:text-red-700 text-xs font-medium mt-2"
+                        >
+                          Quitar imagen
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={e => setFile(e.target.files?.[0] || null)}
+                          className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300 w-full"
+                        />
+                        <p className="text-xs text-gray-400 text-center mt-1">Recomendado: Formato apaisado, máx 2MB</p>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {availableFields.length > 0 && (
@@ -321,10 +373,11 @@ export default function CategoryTree({ data, availableFields = [] }: { data: any
                   Cancelar
                 </button>
                 <button 
+                  disabled={isSaving}
                   type="submit" 
-                  className="px-6 py-2 bg-[#374151] text-white hover:bg-[#4b5563] rounded font-medium flex items-center gap-2"
+                  className="px-6 py-2 bg-[#374151] text-white hover:bg-[#4b5563] rounded font-medium flex items-center gap-2 disabled:opacity-50"
                 >
-                  <Save size={18} /> {editCategoryId ? "Actualizar Categoría" : "Crear Categoría"}
+                  <Save size={18} /> {isSaving ? "Guardando..." : (editCategoryId ? "Actualizar Categoría" : "Crear Categoría")}
                 </button>
               </div>
             </form>
