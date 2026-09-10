@@ -16,6 +16,7 @@ export async function updateProfile(formData: FormData) {
   const phone = formData.get("phone") as string
   const address = formData.get("address") as string
   const bio = formData.get("bio") as string
+  const teamPosition = formData.get("teamPosition") as string
 
   await prisma.user.update({
     where: { id: session.user.id },
@@ -26,6 +27,18 @@ export async function updateProfile(formData: FormData) {
       bio,
     }
   })
+
+  // Update teamPosition if the user is a museum member
+  const member = await prisma.museumMember.findUnique({
+    where: { userId: session.user.id }
+  })
+  if (member && teamPosition !== undefined) {
+    await prisma.museumMember.update({
+      where: { id: member.id },
+      data: { teamPosition }
+    })
+    revalidatePath("/sobre-el-museo/equipo")
+  }
 
   revalidatePath("/admin/perfil")
 }

@@ -17,8 +17,13 @@ export default function UserPermissionsClient({ users, categories }: { users: an
 
   const handleSelectUser = (user: any) => {
     setSelectedUser(user)
-    setIsTeamMember(user.member?.isTeamMember || false)
-    setTeamPosition(user.member?.teamPosition || "")
+    if (user) {
+      setIsTeamMember(user.member?.isTeamMember || false)
+      setTeamPosition(user.member?.teamPosition || "")
+    } else {
+      setIsTeamMember(false)
+      setTeamPosition("")
+    }
   }
 
   const handleSaveTeamProfile = async () => {

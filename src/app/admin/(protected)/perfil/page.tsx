@@ -10,7 +10,8 @@ export default async function ProfilePage() {
   let user = null;
   try {
     user = await prisma.user.findUnique({
-      where: { id: session.user.id }
+      where: { id: session.user.id },
+      include: { member: true }
     })
   } catch (error) {
     return (
@@ -120,6 +121,25 @@ export default async function ProfilePage() {
                   className="w-full border border-gray-300 rounded p-2 focus:ring-[#1d4328] focus:border-[#1d4328]"
                 />
               </div>
+
+              {user.member?.isTeamMember && (
+                <div className="col-span-2 bg-[#f5f7eb] p-4 rounded-lg border border-[#1d4328]/20">
+                  <h4 className="font-semibold text-[#1d4328] mb-2 text-sm flex items-center gap-2">
+                    <User size={16} /> Perfil Público (Equipo del Museo)
+                  </h4>
+                  <p className="text-xs text-gray-600 mb-3">
+                    Estás configurado/a para aparecer públicamente en la web como miembro del equipo.
+                  </p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cargo Público (Ej: Director, Curador)</label>
+                  <input 
+                    type="text" 
+                    name="teamPosition"
+                    defaultValue={user.member.teamPosition || ""}
+                    placeholder="Escriba el cargo..."
+                    className="w-full border border-gray-300 rounded p-2 focus:ring-[#1d4328] focus:border-[#1d4328]"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="pt-4 flex justify-end">
