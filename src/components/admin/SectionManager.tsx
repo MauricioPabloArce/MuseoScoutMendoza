@@ -1,10 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Layers, Plus, Edit, Trash2, ChevronDown, ChevronRight, Settings } from "lucide-react"
+import { Layers, Plus, Edit, Trash2, ChevronDown, ChevronRight, ChevronUp, Settings } from "lucide-react"
 import SectionBuilder from "./SectionBuilder"
 import FieldBuilder from "./FieldBuilder"
-import { deleteSection, deleteField } from "@/app/admin/(protected)/campos/actions"
+import { deleteSection, deleteField, updateFieldOrder } from "@/app/admin/(protected)/campos/actions"
 import toast from "react-hot-toast"
 
 export default function SectionManager({ sections }: { sections: any[] }) {
@@ -48,6 +48,30 @@ export default function SectionManager({ sections }: { sections: any[] }) {
       setFieldToDelete(null)
     } else {
       toast.error((res as any).error || "Error al eliminar")
+    }
+  }
+
+  const handleMoveField = async (sectionId: string, fieldId: string, direction: 'up' | 'down') => {
+    const section = sections.find(s => s.id === sectionId)
+    if (!section) return
+    const fields = [...section.fields]
+    const index = fields.findIndex((f: any) => f.id === fieldId)
+    if (index === -1) return
+    if (direction === 'up' && index === 0) return
+    if (direction === 'down' && index === fields.length - 1) return
+
+    const newIndex = direction === 'up' ? index - 1 : index + 1
+    const temp = fields[index]
+    fields[index] = fields[newIndex]
+    fields[newIndex] = temp
+
+    const loadingToast = toast.loading("Actualizando orden...")
+    const orderedIds = fields.map((f: any) => f.id)
+    const res = await updateFieldOrder(sectionId, orderedIds)
+    if (res.success) {
+      toast.success("Orden actualizado", { id: loadingToast })
+    } else {
+      toast.error(res.error || "Error al ordenar", { id: loadingToast })
     }
   }
 
@@ -186,12 +210,28 @@ export default function SectionManager({ sections }: { sections: any[] }) {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {section.fields.map((field: any) => (
+                        {section.fields.map((field: any, index: number) => (
                           <tr key={field.id} className="hover:bg-gray-50">
                             <td className="px-4 py-3 font-medium text-gray-800">{field.name}</td>
                             <td className="px-4 py-3 text-gray-500 font-mono text-xs">{field.internalKey}</td>
                             <td className="px-4 py-3">{field.type}</td>
                             <td className="px-4 py-3 text-right whitespace-nowrap">
+                              <button 
+                                onClick={() => handleMoveField(section.id, field.id, 'up')}
+                                disabled={index === 0}
+                                className="inline-block p-1 text-gray-400 hover:text-[#31573c] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                title="Subir orden"
+                              >
+                                <ChevronUp size={16} />
+                              </button>
+                              <button 
+                                onClick={() => handleMoveField(section.id, field.id, 'down')}
+                                disabled={index === section.fields.length - 1}
+                                className="inline-block p-1 text-gray-400 hover:text-[#31573c] disabled:opacity-30 disabled:cursor-not-allowed mr-2 transition-colors"
+                                title="Bajar orden"
+                              >
+                                <ChevronDown size={16} />
+                              </button>
                               <button 
                                 onClick={() => {
                                   setEditingField(field)
@@ -200,6 +240,7 @@ export default function SectionManager({ sections }: { sections: any[] }) {
                                   setEditingSection(null)
                                 }}
                                 className="inline-block p-1 text-gray-400 hover:text-blue-600 mr-2 transition-colors"
+                                title="Editar"
                               >
                                 <Edit size={16} />
                               </button>

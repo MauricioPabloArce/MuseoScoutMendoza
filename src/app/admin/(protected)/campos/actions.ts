@@ -189,3 +189,23 @@ export async function deleteField(id: string) {
     return { success: false, error: "No se pudo eliminar el campo. Comprueba las dependencias." }
   }
 }
+
+export async function updateFieldOrder(sectionId: string, orderedFieldIds: string[]) {
+  const session = await auth()
+  if (!session?.user) throw new Error("No autorizado")
+
+  try {
+    await prisma.$transaction(
+      orderedFieldIds.map((id, index) =>
+        prisma.fieldDefinition.update({
+          where: { id },
+          data: { order: index },
+        })
+      )
+    )
+    revalidatePath("/admin/campos")
+    return { success: true }
+  } catch (error: any) {
+    return { success: false, error: "Error al actualizar el orden de los campos." }
+  }
+}
