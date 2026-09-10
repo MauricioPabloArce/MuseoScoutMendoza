@@ -140,7 +140,7 @@ export async function createPiece(data: {
   mediaUrls?: string[]
 }) {
   const session = await auth()
-  if (!session?.user) throw new Error("No autorizado")
+  if (!session?.user?.id) throw new Error("No autorizado")
 
   const hasPerm = await checkUserPermission(session.user.id, data.categoryId, 'create')
   if (!hasPerm) return { success: false, error: "No tienes permisos para crear piezas en esta rama del acervo." }
@@ -196,7 +196,7 @@ export async function updatePiece(id: string, data: {
   mediaUrls?: string[]
 }) {
   const session = await auth()
-  if (!session?.user) throw new Error("No autorizado")
+  if (!session?.user?.id) throw new Error("No autorizado")
 
   const hasPerm = await checkUserPermission(session.user.id, data.categoryId, 'edit')
   if (!hasPerm) return { success: false, error: "No tienes permisos para editar piezas en esta rama del acervo." }
@@ -240,7 +240,7 @@ export async function updatePiece(id: string, data: {
 
 export async function archivePiece(id: string) {
   const session = await auth()
-  if (!session?.user) throw new Error("No autorizado")
+  if (!session?.user?.id) throw new Error("No autorizado")
 
   try {
     const piece = await prisma.museumPiece.findUnique({ where: { id } })
@@ -263,7 +263,7 @@ export async function archivePiece(id: string) {
 
 export async function deletePiece(id: string) {
   const session = await auth()
-  if (!session?.user) throw new Error("No autorizado")
+  if (!session?.user?.id) throw new Error("No autorizado")
 
   try {
     // Verificar que la pieza existe
