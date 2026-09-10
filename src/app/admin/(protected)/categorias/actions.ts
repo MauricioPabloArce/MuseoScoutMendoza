@@ -112,6 +112,9 @@ export async function createCategory(data: { name: string; slug: string; prefix:
       }
     })
     revalidatePath("/admin/categorias")
+    revalidatePath("/admin/piezas")
+    revalidatePath("/admin/piezas/crear")
+    revalidatePath("/catalogo")
     return { success: true }
   } catch (error: any) {
     if (error.code === 'P2002') {
@@ -160,6 +163,9 @@ export async function updateCategory(id: string, data: { name: string; slug: str
       }
     })
     revalidatePath("/admin/categorias")
+    revalidatePath("/admin/piezas")
+    revalidatePath("/admin/piezas/crear")
+    revalidatePath("/catalogo")
     return { success: true }
   } catch (error: any) {
     if (error.code === 'P2002') {
@@ -178,6 +184,9 @@ export async function togglePublishCategory(id: string, isPublished: boolean) {
     data: { isPublished }
   })
   revalidatePath("/admin/categorias")
+  revalidatePath("/admin/piezas")
+  revalidatePath("/admin/piezas/crear")
+  revalidatePath("/catalogo")
 }
 
 export async function archiveCategory(id: string) {
@@ -201,6 +210,9 @@ export async function archiveCategory(id: string) {
     data: { isArchived: true }
   })
   revalidatePath("/admin/categorias")
+  revalidatePath("/admin/piezas")
+  revalidatePath("/admin/piezas/crear")
+  revalidatePath("/catalogo")
   return { success: true }
 }
 
@@ -225,6 +237,9 @@ export async function deleteCategory(id: string) {
       where: { id }
     })
     revalidatePath("/admin/categorias")
+    revalidatePath("/admin/piezas")
+    revalidatePath("/admin/piezas/crear")
+    revalidatePath("/catalogo")
     return { success: true }
   } catch (error: any) {
     return { success: false, error: "Error al eliminar la categoría" }
