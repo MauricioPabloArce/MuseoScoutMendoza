@@ -76,7 +76,7 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Pro
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           
           {/* Sidebar */}
-          <aside className="w-full lg:w-72 flex-shrink-0">
+          <aside className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-24 lg:h-[calc(100vh-8rem)] overflow-y-auto custom-scrollbar">
             <CategorySidebar categories={allCategories} />
           </aside>
 
