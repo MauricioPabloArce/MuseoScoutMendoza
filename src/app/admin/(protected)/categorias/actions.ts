@@ -23,7 +23,9 @@ export async function getCategories(): Promise<any[]> {
       _count: {
         select: { pieces: true }
       },
-      fields: true,
+      sections: {
+        include: { section: true }
+      },
       leader: {
         include: {
           user: true
@@ -75,11 +77,22 @@ export async function uploadCategoryImage(formData: FormData) {
   return { url: `/uploads/categories/${filename}` }
 }
 
-export async function createCategory(data: { name: string; slug: string; prefix: string; description?: string; parentId?: string; fieldIds?: string[]; imageUrl?: string; leaderId?: string }) {
+export async function createCategory(data: { name: string; slug: string; prefix: string; description?: string; parentId?: string; sectionIds?: string[]; imageUrl?: string; leaderId?: string }) {
   const session = await auth()
   if (!session?.user) throw new Error("No autorizado")
 
   try {
+    // Ensure "Datos Pieza" section is always included
+    let defaultSection = await prisma.fieldSection.findUnique({ where: { name: "Datos Pieza" } })
+    if (!defaultSection) {
+      defaultSection = await prisma.fieldSection.create({ data: { name: "Datos Pieza" } })
+    }
+    
+    let finalSectionIds = data.sectionIds || []
+    if (!finalSectionIds.includes(defaultSection.id)) {
+      finalSectionIds = [defaultSection.id, ...finalSectionIds]
+    }
+
     await prisma.category.create({
       data: {
         name: data.name,
@@ -90,9 +103,9 @@ export async function createCategory(data: { name: string; slug: string; prefix:
         imageUrl: data.imageUrl || null,
         leaderId: data.leaderId || null,
         isPublished: false,
-        fields: data.fieldIds && data.fieldIds.length > 0 ? {
-          create: data.fieldIds.map((id, i) => ({
-            fieldId: id,
+        sections: finalSectionIds.length > 0 ? {
+          create: finalSectionIds.map((id, i) => ({
+            sectionId: id,
             order: i
           }))
         } : undefined
@@ -108,12 +121,23 @@ export async function createCategory(data: { name: string; slug: string; prefix:
   }
 }
 
-export async function updateCategory(id: string, data: { name: string; slug: string; prefix: string; description?: string; parentId?: string; fieldIds?: string[]; imageUrl?: string; leaderId?: string }) {
+export async function updateCategory(id: string, data: { name: string; slug: string; prefix: string; description?: string; parentId?: string; sectionIds?: string[]; imageUrl?: string; leaderId?: string }) {
   const session = await auth()
   if (!session?.user) throw new Error("No autorizado")
 
   try {
-    await prisma.categoryField.deleteMany({
+    // Ensure "Datos Pieza" section is always included
+    let defaultSection = await prisma.fieldSection.findUnique({ where: { name: "Datos Pieza" } })
+    if (!defaultSection) {
+      defaultSection = await prisma.fieldSection.create({ data: { name: "Datos Pieza" } })
+    }
+    
+    let finalSectionIds = data.sectionIds || []
+    if (!finalSectionIds.includes(defaultSection.id)) {
+      finalSectionIds = [defaultSection.id, ...finalSectionIds]
+    }
+
+    await prisma.categorySection.deleteMany({
       where: { categoryId: id }
     })
 
@@ -127,9 +151,9 @@ export async function updateCategory(id: string, data: { name: string; slug: str
         parentId: data.parentId || null,
         imageUrl: data.imageUrl || null,
         leaderId: data.leaderId || null,
-        fields: data.fieldIds && data.fieldIds.length > 0 ? {
-          create: data.fieldIds.map((fid, i) => ({
-            fieldId: fid,
+        sections: finalSectionIds.length > 0 ? {
+          create: finalSectionIds.map((sid, i) => ({
+            sectionId: sid,
             order: i
           }))
         } : undefined

@@ -1,35 +1,31 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Trash2, Settings, Globe, Lock, Save, X } from "lucide-react"
-import type { FieldDefinition } from "@prisma/client"
+import { Plus, Trash2, Settings, Save, X, Globe, Lock } from "lucide-react"
 import { createField, updateField } from "@/app/admin/(protected)/campos/actions"
 import toast from "react-hot-toast"
 import { useRouter } from "next/navigation"
 
-export default function FieldBuilder({ sections, initialData }: { sections: { id: string, name: string }[], initialData?: any }) {
+export default function FieldBuilder({ sections, initialData, onCancel }: { sections: { id: string, name: string }[], initialData?: any, onCancel?: () => void }) {
   const [name, setName] = useState("")
   const [internalKey, setInternalKey] = useState("")
   const [type, setType] = useState("TEXT")
-  const [isGeneral, setIsGeneral] = useState(true)
   const [sectionId, setSectionId] = useState<string>("")
   const [options, setOptions] = useState<{ label: string, value: string }[]>([])
   const router = useRouter()
   
   useEffect(() => {
-    if (initialData) {
-      setName(initialData.name)
-      setInternalKey(initialData.internalKey)
-      setType(initialData.type)
-      setIsGeneral(initialData.isGeneral)
+    if (initialData && initialData.id) {
+      setName(initialData.name || "")
+      setInternalKey(initialData.internalKey || "")
+      setType(initialData.type || "TEXT")
       setSectionId(initialData.sectionId || "")
       setOptions(initialData.options ? initialData.options.map((o: any) => ({ label: o.label, value: o.value })) : [])
     } else {
       setName("")
       setInternalKey("")
       setType("TEXT")
-      setIsGeneral(true)
-      setSectionId("")
+      setSectionId(initialData?.sectionId || "")
       setOptions([])
     }
   }, [initialData])
@@ -56,19 +52,20 @@ export default function FieldBuilder({ sections, initialData }: { sections: { id
     if(!name || !internalKey) return toast.error("Nombre y clave interna son requeridos")
     if(!sectionId) return toast.error("Debes asignar una sección visual al campo")
     
-    const res = initialData 
+    const res = initialData && initialData.id
       ? await updateField(initialData.id, {
-          name, internalKey, type, isGeneral, sectionId, options: ['SELECT', 'MULTISELECT'].includes(type) ? options : []
+          name, internalKey, type, sectionId, 
+          options: ['SELECT', 'MULTISELECT'].includes(type) ? options : []
         })
       : await createField({
-          name, internalKey, type, isGeneral, sectionId, options: ['SELECT', 'MULTISELECT'].includes(type) ? options : []
+          name, internalKey, type, sectionId, 
+          options: ['SELECT', 'MULTISELECT'].includes(type) ? options : []
         })
 
     if(res.success) {
-      toast.success(initialData ? "Campo actualizado con éxito" : "Campo creado con éxito")
-      if (initialData) {
-        router.push("/admin/campos")
-      } else {
+      toast.success(initialData?.id ? "Campo actualizado con éxito" : "Campo creado con éxito")
+      if (onCancel) onCancel()
+      if (!initialData?.id) {
         setName("")
         setInternalKey("")
         setOptions([])
@@ -80,7 +77,8 @@ export default function FieldBuilder({ sections, initialData }: { sections: { id
   }
 
   const handleCancel = () => {
-    router.push("/admin/campos")
+    if (onCancel) onCancel()
+    else router.push("/admin/campos")
   }
 
   return (
@@ -126,24 +124,10 @@ export default function FieldBuilder({ sections, initialData }: { sections: { id
             <option value="BOOLEAN">Verdadero / Falso</option>
             <option value="SELECT">Lista desplegable (Select)</option>
             <option value="MULTISELECT">Selección múltiple</option>
+            <option value="IMAGE">Imagen (Subir Archivo)</option>
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Asignar a Sección Visual *</label>
-          <select 
-            required
-            className="w-full border border-gray-300 rounded p-2 focus:ring-[#374151] focus:border-[#374151]"
-            value={sectionId}
-            onChange={e => setSectionId(e.target.value)}
-          >
-            <option value="">-- Seleccionar Sección --</option>
-            {sections.map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
-          <p className="text-xs text-gray-500 mt-1">Es obligatorio agrupar el campo en una sección.</p>
-        </div>
       </div>
 
       {['SELECT', 'MULTISELECT'].includes(type) && (
@@ -165,13 +149,11 @@ export default function FieldBuilder({ sections, initialData }: { sections: { id
       )}
 
       <div className="flex justify-end pt-4 border-t border-gray-200 gap-2">
-        {initialData && (
-          <button type="button" onClick={handleCancel} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded flex items-center gap-2 font-medium">
-            <X size={16} /> Cancelar
-          </button>
-        )}
+        <button type="button" onClick={handleCancel} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded flex items-center gap-2 font-medium">
+          <X size={16} /> Cancelar
+        </button>
         <button onClick={handleSave} className="bg-[#374151] hover:bg-[#4b5563] text-white px-6 py-2 rounded flex items-center gap-2 font-medium">
-          <Save size={18} /> {initialData ? "Actualizar" : "Guardar"}
+          <Save size={18} /> {initialData?.id ? "Actualizar" : "Guardar"}
         </button>
       </div>
     </div>

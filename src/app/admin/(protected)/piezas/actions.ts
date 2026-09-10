@@ -8,7 +8,9 @@ export async function getPieces() {
   return await prisma.museumPiece.findMany({
     include: {
       category: true,
-      fieldValues: true,
+      fieldValues: {
+        include: { field: true }
+      },
       media: true
     },
     orderBy: { createdAt: 'desc' }
@@ -16,24 +18,22 @@ export async function getPieces() {
 }
 
 export async function getFieldsForCategory(categoryId: string) {
-  // Fields that are general OR specific to this category
-  const generalFields = await prisma.fieldDefinition.findMany({
-    where: { isGeneral: true, isActive: true },
-    orderBy: { order: 'asc' },
-    include: { options: { orderBy: { order: 'asc' } }, section: true }
+  const categorySections = await prisma.categorySection.findMany({
+    where: { categoryId },
+    select: { sectionId: true }
   })
+  const sectionIds = categorySections.map(cs => cs.sectionId)
 
-  const specificFields = await prisma.fieldDefinition.findMany({
+  const fields = await prisma.fieldDefinition.findMany({
     where: {
-      isGeneral: false,
-      isActive: true,
-      categoryFields: { some: { categoryId } }
+      sectionId: { in: sectionIds },
+      isActive: true
     },
     orderBy: { order: 'asc' },
     include: { options: { orderBy: { order: 'asc' } }, section: true }
   })
 
-  return [...generalFields, ...specificFields].sort((a, b) => a.order - b.order)
+  return fields
 }
 
 // Atomic generation of the registry code
@@ -99,7 +99,6 @@ export async function uploadImage(formData: FormData) {
 }
 
 export async function createPiece(data: {
-  title: string
   categoryId: string
   status: string
   fields: Record<string, string>
@@ -113,7 +112,6 @@ export async function createPiece(data: {
 
     const piece = await prisma.museumPiece.create({
       data: {
-        title: data.title,
         categoryId: data.categoryId,
         registryCode,
         status: data.status,
@@ -154,7 +152,6 @@ export async function getPiece(id: string) {
 }
 
 export async function updatePiece(id: string, data: {
-  title: string
   categoryId: string
   status: string
   fields: Record<string, string>
@@ -172,7 +169,6 @@ export async function updatePiece(id: string, data: {
     const piece = await prisma.museumPiece.update({
       where: { id },
       data: {
-        title: data.title,
         categoryId: data.categoryId,
         status: data.status,
         updatedBy: session.user.id,

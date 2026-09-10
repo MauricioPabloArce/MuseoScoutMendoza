@@ -10,14 +10,7 @@ export async function getFields() {
       options: {
         orderBy: { order: 'asc' }
       },
-      section: true,
-      categoryFields: {
-        include: {
-          category: {
-            select: { name: true, id: true }
-          }
-        }
-      }
+      section: true
     },
     orderBy: { order: 'asc' }
   })
@@ -25,6 +18,16 @@ export async function getFields() {
 
 export async function getSections() {
   return await prisma.fieldSection.findMany({
+    include: {
+      fields: {
+        include: {
+          options: {
+            orderBy: { order: 'asc' }
+          }
+        },
+        orderBy: { order: 'asc' }
+      }
+    },
     orderBy: { order: 'asc' }
   })
 }
@@ -52,8 +55,8 @@ export async function createField(data: {
   name: string
   internalKey: string
   type: string
-  isGeneral: boolean
-  sectionId?: string
+  isGeneral?: boolean
+  sectionId: string
   options?: { label: string, value: string }[]
 }) {
   const session = await auth()
@@ -65,9 +68,9 @@ export async function createField(data: {
         name: data.name,
         internalKey: data.internalKey,
         type: data.type,
-        isGeneral: data.isGeneral,
+        isGeneral: data.isGeneral ?? false,
         isPublic: true,
-        sectionId: data.sectionId || null,
+        sectionId: data.sectionId,
         options: data.options && data.options.length > 0 ? {
           create: data.options.map((opt, i) => ({
             label: opt.label,
@@ -131,8 +134,8 @@ export async function updateField(id: string, data: {
   name: string
   internalKey: string
   type: string
-  isGeneral: boolean
-  sectionId?: string
+  isGeneral?: boolean
+  sectionId: string
   options?: { label: string, value: string }[]
 }) {
   const session = await auth()
@@ -147,8 +150,8 @@ export async function updateField(id: string, data: {
         name: data.name,
         internalKey: data.internalKey,
         type: data.type,
-        isGeneral: data.isGeneral,
-        sectionId: data.sectionId || null,
+        isGeneral: data.isGeneral ?? false,
+        sectionId: data.sectionId,
         options: data.options && data.options.length > 0 ? {
           create: data.options.map((opt, i) => ({
             label: opt.label,
@@ -177,12 +180,6 @@ export async function deleteField(id: string) {
     const piecesCount = await prisma.pieceFieldValue.count({ where: { fieldId: id } })
     if (piecesCount > 0) {
       return { success: false, error: `Este campo no puede ser eliminado porque está siendo utilizado en ${piecesCount} pieza(s).` }
-    }
-
-    // Check if field is used by any category
-    const categoriesCount = await prisma.categoryField.count({ where: { fieldId: id } })
-    if (categoriesCount > 0) {
-      return { success: false, error: `Este campo no puede ser eliminado porque está asignado a ${categoriesCount} categoría(s).` }
     }
 
     await prisma.fieldDefinition.delete({ where: { id } })

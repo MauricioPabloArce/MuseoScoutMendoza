@@ -16,7 +16,6 @@ interface Category {
 
 interface Piece {
   id: string
-  title: string
   registryCode: string
   categoryId: string
   status: string
@@ -48,9 +47,13 @@ export default function PieceExplorer({ categories, pieces }: { categories: Cate
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
   
-  // Delete modal state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [pieceToDelete, setPieceToDelete] = useState<{id: string, title: string} | null>(null)
+  
+  // Archive modal state
+  const [archiveModalOpen, setArchiveModalOpen] = useState(false)
+  const [pieceToArchive, setPieceToArchive] = useState<{id: string, title: string} | null>(null)
+
   const [isDeleting, setIsDeleting] = useState(false)
   
   const tree = buildTree(categories)
@@ -62,12 +65,22 @@ export default function PieceExplorer({ categories, pieces }: { categories: Cate
     setExpanded(newExpanded)
   }
 
-  const handleArchive = async (id: string, title: string) => {
-    if(confirm(`¿Estás seguro de archivar la pieza "${title}"?`)) {
-      const res = await archivePiece(id)
-      if (res.success) toast.success("Pieza archivada")
-      else toast.error(res.error || "Error")
+  const handleArchiveConfirm = async () => {
+    if (!pieceToArchive) return
+    setIsDeleting(true)
+    const res = await archivePiece(pieceToArchive.id)
+    setIsDeleting(false)
+    if (res.success) {
+      toast.success("Pieza archivada")
+      setArchiveModalOpen(false)
+      setPieceToArchive(null)
+    } else {
+      toast.error(res.error || "Error")
     }
+  }
+
+  const getPieceTitle = (piece: Piece) => {
+    return piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'titulo')?.value || "Sin Título"
   }
 
   const handleDeleteConfirm = async () => {
@@ -179,10 +192,12 @@ export default function PieceExplorer({ categories, pieces }: { categories: Cate
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {visiblePieces.filter(p => p.status !== 'ARCHIVED').map(piece => (
+              {visiblePieces.filter(p => p.status !== 'ARCHIVED').map(piece => {
+                const title = getPieceTitle(piece)
+                return (
                 <tr key={piece.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-mono text-[#1d4328] font-medium">{piece.registryCode}</td>
-                  <td className="px-4 py-3 text-gray-800">{piece.title}</td>
+                  <td className="px-4 py-3 text-gray-800">{title}</td>
                   <td className="px-4 py-3">
                     {piece.status === 'PUBLISHED' && <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs">Publicado</span>}
                     {piece.status === 'DRAFT' && <span className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full text-xs">Borrador</span>}
@@ -198,7 +213,7 @@ export default function PieceExplorer({ categories, pieces }: { categories: Cate
                       </Link>
                       <button 
                         onClick={() => {
-                          setPieceToDelete({ id: piece.id, title: piece.title })
+                          setPieceToDelete({ id: piece.id, title })
                           setDeleteModalOpen(true)
                         }}
                         className="p-1.5 text-gray-400 hover:text-red-600 bg-white border border-gray-200 rounded shadow-sm"
@@ -209,7 +224,7 @@ export default function PieceExplorer({ categories, pieces }: { categories: Cate
                     </div>
                   </td>
                 </tr>
-              ))}
+              )})}
               
               {visiblePieces.filter(p => p.status !== 'ARCHIVED').length === 0 && (
                 <tr>
@@ -260,6 +275,48 @@ export default function PieceExplorer({ categories, pieces }: { categories: Cate
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isDeleting ? "Eliminando..." : "Eliminar Definitivamente"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Archive Modal */}
+      {archiveModalOpen && pieceToArchive && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+              <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                <AlertTriangle className="text-amber-500" size={18} />
+                Confirmar Archivar
+              </h3>
+              <button onClick={() => setArchiveModalOpen(false)} className="text-gray-400 hover:text-gray-600">×</button>
+            </div>
+            
+            <div className="p-6">
+              <p className="text-gray-700">
+                ¿Estás seguro que deseas archivar la pieza <strong>"{pieceToArchive.title}"</strong>?
+              </p>
+              <p className="text-sm text-amber-600 mt-2 font-medium">
+                Las piezas archivadas dejan de ser visibles públicamente y se mueven al archivo inactivo.
+              </p>
+            </div>
+
+            <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+              <button 
+                type="button" 
+                onClick={() => setArchiveModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 rounded text-gray-700 bg-white hover:bg-gray-50 text-sm font-medium"
+              >
+                Cancelar
+              </button>
+              <button 
+                type="button"
+                onClick={handleArchiveConfirm}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeleting ? "Archivando..." : "Archivar"}
               </button>
             </div>
           </div>

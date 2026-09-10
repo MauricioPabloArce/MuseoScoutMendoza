@@ -6,7 +6,7 @@ import { createSection, updateSection } from "@/app/admin/(protected)/campos/act
 import toast from "react-hot-toast"
 import { useRouter } from "next/navigation"
 
-export default function SectionBuilder({ initialData }: { initialData?: any }) {
+export default function SectionBuilder({ initialData, onCancel }: { initialData?: any, onCancel?: () => void }) {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const router = useRouter()
@@ -31,9 +31,8 @@ export default function SectionBuilder({ initialData }: { initialData?: any }) {
       
     if (res.success) {
       toast.success(initialData ? "Sección actualizada" : "Sección creada")
-      if (initialData) {
-        router.push("/admin/campos")
-      } else {
+      if (onCancel) onCancel()
+      if (!initialData) {
         setName("")
         setDescription("")
       }
@@ -43,7 +42,8 @@ export default function SectionBuilder({ initialData }: { initialData?: any }) {
   }
 
   const handleCancel = () => {
-    router.push("/admin/campos")
+    if (onCancel) onCancel()
+    else router.push("/admin/campos")
   }
 
   return (
@@ -77,11 +77,9 @@ export default function SectionBuilder({ initialData }: { initialData?: any }) {
       </div>
 
       <div className="flex justify-end pt-4 border-t border-gray-200 gap-2">
-        {initialData && (
-          <button type="button" onClick={handleCancel} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded flex items-center gap-2 font-medium">
-            <X size={16} /> Cancelar
-          </button>
-        )}
+        <button type="button" onClick={handleCancel} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded flex items-center gap-2 font-medium">
+          <X size={16} /> Cancelar
+        </button>
         <button type="submit" className="bg-[#374151] hover:bg-[#4b5563] text-white px-4 py-2 rounded flex items-center gap-2 font-medium">
           <Save size={16} /> {initialData ? "Actualizar" : "Guardar"}
         </button>

@@ -1,3 +1,4 @@
+Root
 Yjjx6^14EzwjQjmm
 
 museo contabo
@@ -6,6 +7,12 @@ cd /home/museo/app
 
 su - museo
 cd /home/museo/app
+
+git pull origin feature/initial-platform
+npx prisma db push
+npx prisma generate
+npm run build
+pm2 restart museo-scout
 
 
 cd /home/museo/app

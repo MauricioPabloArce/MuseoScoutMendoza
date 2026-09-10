@@ -90,7 +90,7 @@ model Category {
   children    Category[] @relation("CategoryHierarchy")
   leader      MuseumMember? @relation("CategoryLeader", fields: [leaderId], references: [id], onDelete: SetNull)
   
-  fields      CategoryField[]
+  sections    CategorySection[]
   permissions CategoryPermission[]
   pieces      MuseumPiece[]
 }
@@ -121,6 +121,7 @@ model FieldSection {
   updatedAt   DateTime @updatedAt
 
   fields      FieldDefinition[]
+  categories  CategorySection[]
 }
 
 model FieldDefinition {
@@ -143,7 +144,6 @@ model FieldDefinition {
 
   section        FieldSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
   options        FieldOption[]
-  categoryFields CategoryField[]
   pieceValues    PieceFieldValue[]
 }
 
@@ -157,24 +157,22 @@ model FieldOption {
   field     FieldDefinition @relation(fields: [fieldId], references: [id], onDelete: Cascade)
 }
 
-model CategoryField {
+model CategorySection {
   id         String   @id @default(cuid())
   categoryId String
-  fieldId    String
+  sectionId  String
   order      Int      @default(0)
   
-  category   Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  field      FieldDefinition @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  category   Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  section    FieldSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
-  @@unique([categoryId, fieldId])
+  @@unique([categoryId, sectionId])
 }
 
 model MuseumPiece {
   id             String   @id @default(cuid())
   registryCode   String   @unique
   categoryId     String
-  title          String
-  mainImageUrl   String?
   status         String   @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
   registeredAt   DateTime @default(now())
   createdAt      DateTime @default(now())

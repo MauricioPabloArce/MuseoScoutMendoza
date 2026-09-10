@@ -32,7 +32,6 @@ export default function PieceForm({
 }) {
   const isEditing = !!initialData
   
-  const [title, setTitle] = useState(initialData?.title || "")
   const [categoryId, setCategoryId] = useState(initialData?.categoryId || initialCategoryId || "")
   const [status, setStatus] = useState(initialData?.status || "DRAFT")
   
@@ -52,10 +51,9 @@ export default function PieceForm({
 
   const [loadingFields, setLoadingFields] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [file, setFile] = useState<File | null>(null)
-  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(
-    initialData?.media?.[0]?.url || null
-  )
+  
+  // To hold files to upload for IMAGE type fields
+  const [fileUploads, setFileUploads] = useState<Record<string, File>>({})
 
   useEffect(() => {
     if (!categoryId) {
@@ -79,40 +77,41 @@ export default function PieceForm({
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!title || !categoryId) return toast.error("Título y categoría son obligatorios")
+    if (!categoryId) return toast.error("La categoría es obligatoria")
     
     setSaving(true)
-    let mediaUrls: string[] = []
     
-    if (file) {
-      const catName = categories.find(c => c.id === categoryId)?.name || "General"
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("title", title)
-      formData.append("category", catName)
-      
-      const uploadRes = await uploadImage(formData)
-      if (uploadRes.url) {
-        mediaUrls.push(uploadRes.url)
+    // Upload files
+    const catName = categories.find(c => c.id === categoryId)?.name || "General"
+    const finalFieldValues = { ...fieldValues }
+    
+    for (const [fieldId, fileObj] of Object.entries(fileUploads)) {
+      if (fileObj) {
+        const formData = new FormData()
+        formData.append("file", fileObj)
+        // Usamos el ID del campo temporalmente como título para el nombre de archivo
+        formData.append("title", "field_" + fieldId)
+        formData.append("category", catName)
+        
+        const uploadRes = await uploadImage(formData)
+        if (uploadRes.url) {
+          finalFieldValues[fieldId] = uploadRes.url
+        }
       }
     }
 
     let res
     if (isEditing) {
       res = await updatePiece(initialData.id, {
-        title,
         categoryId,
         status,
-        fields: fieldValues,
-        mediaUrls
+        fields: finalFieldValues
       })
     } else {
       res = await createPiece({
-        title,
         categoryId,
         status,
-        fields: fieldValues,
-        mediaUrls
+        fields: finalFieldValues
       })
     }
     setSaving(false)
@@ -130,19 +129,8 @@ export default function PieceForm({
   return (
     <form onSubmit={handleSave} className="space-y-8">
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Información Principal</h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Información de Sistema</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Título de la Pieza *</label>
-            <input 
-              required
-              type="text" 
-              className="w-full border border-gray-300 rounded p-2 focus:ring-[#1d4328] focus:border-[#1d4328]"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-            />
-          </div>
-          
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Categoría Taxonómica *</label>
             <select 
@@ -171,62 +159,6 @@ export default function PieceForm({
               <option value="PUBLISHED">Publicado (Visible)</option>
               <option value="ARCHIVED">Archivado (Oculto)</option>
             </select>
-          </div>
-          
-          <div className="col-span-2 mt-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Imagen de la Pieza (Máximo 1 imagen)</label>
-            <div className="flex flex-col gap-4 border-2 border-dashed border-gray-300 p-4 rounded-lg bg-gray-50">
-              
-              {/* Show existing image if editing and no new file selected */}
-              {existingImageUrl && !file && (
-                <div className="flex items-center gap-4 bg-white p-3 rounded-lg border border-gray-200">
-                  <img 
-                    src={existingImageUrl} 
-                    alt="Imagen actual" 
-                    className="w-20 h-20 object-cover rounded-lg border border-gray-200"
-                  />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-700">Imagen actual de la pieza</p>
-                    <p className="text-xs text-gray-500">Selecciona un nuevo archivo para reemplazarla</p>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center gap-4">
-                <div className="bg-white p-3 rounded-full shadow-sm text-gray-400">
-                  <ImageIcon size={24} />
-                </div>
-                <input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={e => {
-                    const selected = e.target.files?.[0] || null
-                    setFile(selected)
-                  }}
-                  className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
-                />
-              </div>
-              {file && (
-                <div className="flex items-center gap-3 text-sm text-gray-600 bg-white p-3 rounded-lg border border-gray-200">
-                  <img 
-                    src={URL.createObjectURL(file)} 
-                    alt="Preview" 
-                    className="w-16 h-16 object-cover rounded-lg border border-gray-200"
-                  />
-                  <div className="flex-1">
-                    <p className="font-semibold">{file.name}</p>
-                    <p className="text-xs text-gray-400">{(file.size / 1024).toFixed(1)} KB</p>
-                  </div>
-                  <button 
-                    type="button" 
-                    onClick={() => setFile(null)} 
-                    className="text-red-500 hover:text-red-700 text-xs font-medium"
-                  >
-                    Quitar
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>
@@ -280,6 +212,28 @@ export default function PieceForm({
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                           ))}
                         </select>
+                      ) : field.type === 'IMAGE' ? (
+                        <div className="flex flex-col gap-2">
+                          {fieldValues[field.id] && !fileUploads[field.id] && (
+                            <img src={fieldValues[field.id]} className="h-24 w-auto object-cover border border-gray-200 rounded" />
+                          )}
+                          {fileUploads[field.id] && (
+                            <div className="text-xs text-green-700 font-medium bg-green-50 p-2 rounded">
+                              Archivo nuevo seleccionado: {fileUploads[field.id].name}
+                            </div>
+                          )}
+                          <input 
+                            type="file" 
+                            accept="image/*"
+                            onChange={e => {
+                              const file = e.target.files?.[0]
+                              if (file) {
+                                setFileUploads(prev => ({ ...prev, [field.id]: file }))
+                              }
+                            }}
+                            className="text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700"
+                          />
+                        </div>
                       ) : (
                         <input 
                           type={field.type === 'NUMBER' ? 'number' : field.type === 'DATE' ? 'date' : 'text'}
