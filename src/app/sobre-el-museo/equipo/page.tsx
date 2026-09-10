@@ -3,6 +3,8 @@ import Header from "@/components/public/Header"
 import Footer from "@/components/public/Footer"
 import { Users, User, Shield } from "lucide-react"
 
+export const dynamic = 'force-dynamic'
+
 export default async function EquipoPage() {
   const teamMembers = await prisma.museumMember.findMany({
     where: { isTeamMember: true },
