@@ -32,8 +32,11 @@ export default function FieldBuilder({ sections, initialData, onCancel }: { sect
 
   const generateKey = (val: string) => {
     setName(val)
-    if(!initialData && !internalKey) {
-      setInternalKey(val.toLowerCase().replace(/[^a-z0-9]/g, '_'))
+    if(!initialData?.id) {
+      const sectionName = sections.find(s => s.id === sectionId)?.name || ""
+      const prefix = sectionName.split(' ').map(w => w.substring(0, 3)).join('').toLowerCase().replace(/[^a-z0-9]/g, '')
+      const baseKey = val.toLowerCase().replace(/[^a-z0-9]/g, '_')
+      setInternalKey(prefix ? `${prefix}_${baseKey}` : baseKey)
     }
   }
 
@@ -106,7 +109,7 @@ export default function FieldBuilder({ sections, initialData, onCancel }: { sect
             placeholder="ej_material"
             value={internalKey}
             onChange={e => setInternalKey(e.target.value)}
-            disabled={!!initialData}
+            disabled={!!initialData?.id}
           />
         </div>
         
@@ -121,7 +124,7 @@ export default function FieldBuilder({ sections, initialData, onCancel }: { sect
             <option value="TEXTAREA">Texto largo (Descripción)</option>
             <option value="NUMBER">Número</option>
             <option value="DATE">Fecha</option>
-            <option value="BOOLEAN">Verdadero / Falso</option>
+            <option value="BOOLEAN">Sí / No (Casilla para tildar)</option>
             <option value="SELECT">Lista desplegable (Select)</option>
             <option value="MULTISELECT">Selección múltiple</option>
             <option value="IMAGE">Imagen (Subir Archivo)</option>
