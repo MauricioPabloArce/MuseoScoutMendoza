@@ -59,29 +59,32 @@ export default function LoginPage() {
             </button>
           </form>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-[#d5cdbc]" />
+          {process.env.NODE_ENV === 'development' && (
+            <>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-[#d5cdbc]" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-[#f5f2eb] text-gray-500">O para pruebas locales</span>
+                </div>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-[#f5f2eb] text-gray-500">O para pruebas locales</span>
-              </div>
-            </div>
 
-            <form
-              action={async () => {
-                "use server"
-                await signIn("credentials", { redirectTo: "/admin" })
-              }}
-            >
-              <button
-                type="submit"
-                className="w-full flex items-center justify-center gap-3 bg-gray-800 hover:bg-gray-900 text-white py-3 px-4 rounded-md transition-colors font-medium shadow-sm"
+              <form
+                action={async () => {
+                  "use server"
+                  await signIn("credentials", { redirectTo: "/admin" })
+                }}
               >
-                Entrar en Modo Desarrollo
-              </button>
-            </form>
-            
+                <button
+                  type="submit"
+                  className="w-full flex items-center justify-center gap-3 bg-gray-800 hover:bg-gray-900 text-white py-3 px-4 rounded-md transition-colors font-medium shadow-sm"
+                >
+                  Entrar en Modo Desarrollo
+                </button>
+              </form>
+            </>
+          )}
             <div className="relative mt-6">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-[#d5cdbc]" />
