@@ -16,6 +16,16 @@ export type CategoryWithPieceCount = {
   _count: { pieces: number }
 }
 
+async function requireAdmin() {
+  const session = await auth()
+  if (!session?.user) throw new Error("No autorizado")
+  const member = await prisma.museumMember.findUnique({ where: { userId: session.user.id } })
+  if (!member || (member.role !== 'ADMIN' && member.role !== 'SUPERADMIN')) {
+    throw new Error("Solo administradores pueden realizar esta acción")
+  }
+  return session
+}
+
 export async function getCategories(): Promise<any[]> {
   const categories = await prisma.category.findMany({
     where: { isArchived: false },
@@ -78,8 +88,7 @@ export async function uploadCategoryImage(formData: FormData) {
 }
 
 export async function createCategory(data: { name: string; slug: string; prefix: string; description?: string; parentId?: string; sectionIds?: string[]; imageUrl?: string; leaderId?: string }) {
-  const session = await auth()
-  if (!session?.user) throw new Error("No autorizado")
+  await requireAdmin()
 
   try {
     // Ensure "Datos Pieza" section is always included
@@ -125,8 +134,7 @@ export async function createCategory(data: { name: string; slug: string; prefix:
 }
 
 export async function updateCategory(id: string, data: { name: string; slug: string; prefix: string; description?: string; parentId?: string; sectionIds?: string[]; imageUrl?: string; leaderId?: string }) {
-  const session = await auth()
-  if (!session?.user) throw new Error("No autorizado")
+  await requireAdmin()
 
   try {
     // Ensure "Datos Pieza" section is always included
@@ -176,8 +184,7 @@ export async function updateCategory(id: string, data: { name: string; slug: str
 }
 
 export async function togglePublishCategory(id: string, isPublished: boolean) {
-  const session = await auth()
-  if (!session?.user) throw new Error("No autorizado")
+  await requireAdmin()
 
   await prisma.category.update({
     where: { id },
@@ -190,8 +197,7 @@ export async function togglePublishCategory(id: string, isPublished: boolean) {
 }
 
 export async function archiveCategory(id: string) {
-  const session = await auth()
-  if (!session?.user) throw new Error("No autorizado")
+  await requireAdmin()
 
   // Check if it has children
   const children = await prisma.category.count({ where: { parentId: id, isArchived: false } })
@@ -217,8 +223,7 @@ export async function archiveCategory(id: string) {
 }
 
 export async function deleteCategory(id: string) {
-  const session = await auth()
-  if (!session?.user) throw new Error("No autorizado")
+  await requireAdmin()
 
   // Check if it has children
   const children = await prisma.category.count({ where: { parentId: id } })

@@ -174,7 +174,11 @@ export default function UserPermissionsClient({ users, categories }: { users: an
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h3 className="font-bold text-lg text-gray-800">{selectedUser.name}</h3>
-                <p className="text-sm text-gray-500">{selectedUser.member?.role}</p>
+                {selectedUser.member?.teamPosition ? (
+                  <p className="text-sm text-[#1d4328] font-semibold uppercase tracking-wider">{selectedUser.member.teamPosition}</p>
+                ) : (
+                  <p className="text-sm text-gray-400 italic">Sin cargo asignado</p>
+                )}
               </div>
               <button onClick={() => handleSelectUser(null)} className="text-gray-400 hover:text-gray-600"><X size={20}/></button>
             </div>
@@ -191,18 +195,17 @@ export default function UserPermissionsClient({ users, categories }: { users: an
                 <span className="text-sm font-medium text-gray-800">Es miembro del equipo del museo</span>
               </label>
               
-              {isTeamMember && (
-                <div className="mb-3">
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Cargo Público (Ej: Director, Curador)</label>
-                  <input 
-                    type="text" 
-                    className="w-full border border-gray-300 rounded p-2 text-sm"
-                    placeholder="Escriba el cargo..."
-                    value={teamPosition}
-                    onChange={(e) => setTeamPosition(e.target.value)}
-                  />
-                </div>
-              )}
+              <div className="mb-3">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Cargo Público (Ej: Director, Curador, Colaborador)</label>
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded p-2 text-sm"
+                  placeholder="Escriba el cargo..."
+                  value={teamPosition}
+                  onChange={(e) => setTeamPosition(e.target.value)}
+                />
+                <p className="text-xs text-gray-400 mt-1">Este cargo es independiente del rol del sistema. Un administrador puede tener cargo "Colaborador" en el equipo.</p>
+              </div>
               
               <button 
                 onClick={handleSaveTeamProfile}
