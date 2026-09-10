@@ -54,21 +54,14 @@ export default async function EquipoPage() {
                 <h3 className="text-xl font-bold text-gray-900 mb-1">{member.user.name || 'Voluntario'}</h3>
                 
                 {member.teamPosition ? (
-                  <p className="text-[#1d4328] font-semibold text-sm uppercase tracking-wider mb-4">
+                  <p className="text-[#1d4328] font-semibold text-sm uppercase tracking-wider">
                     {member.teamPosition}
                   </p>
                 ) : (
-                  <p className="text-gray-500 font-medium text-sm mb-4">
+                  <p className="text-gray-500 font-medium text-sm">
                     Miembro del Equipo
                   </p>
                 )}
-                
-                <div className="flex justify-center gap-2 mt-4">
-                  <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">
-                    <Shield size={12} />
-                    {member.role === 'ADMIN' ? 'Administración' : 'Colaborador'}
-                  </span>
-                </div>
               </div>
             </div>
           ))}
