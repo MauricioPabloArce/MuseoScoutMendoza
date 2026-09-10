@@ -234,6 +234,25 @@ export default function PieceForm({
                             className="text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700"
                           />
                         </div>
+                      ) : field.type === 'BOOLEAN' ? (
+                        <div className="flex items-center gap-3 h-10">
+                          <button
+                            type="button"
+                            onClick={() => handleFieldChange(field.id, fieldValues[field.id] === 'true' ? 'false' : 'true')}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                              fieldValues[field.id] === 'true' ? 'bg-[#31573c]' : 'bg-gray-300'
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                fieldValues[field.id] === 'true' ? 'translate-x-6' : 'translate-x-1'
+                              }`}
+                            />
+                          </button>
+                          <span className="text-sm font-medium text-gray-700">
+                            {fieldValues[field.id] === 'true' ? 'Sí' : 'No'}
+                          </span>
+                        </div>
                       ) : (
                         <input 
                           type={field.type === 'NUMBER' ? 'number' : field.type === 'DATE' ? 'date' : 'text'}
