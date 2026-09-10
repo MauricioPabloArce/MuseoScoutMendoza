@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronRight, ChevronDown, Folder, FolderOpen, MoreVertical, Plus, Edit, Eye, EyeOff, Archive, Save, Trash2, AlertTriangle } from "lucide-react"
+import { ChevronRight, ChevronDown, ChevronUp, Folder, FolderOpen, MoreVertical, Plus, Edit, Eye, EyeOff, Archive, Save, Trash2, AlertTriangle } from "lucide-react"
 import type { CategoryWithPieceCount } from "@/app/admin/(protected)/categorias/actions"
 import { uploadCategoryImage, togglePublishCategory, archiveCategory, deleteCategory, createCategory, updateCategory } from "@/app/admin/(protected)/categorias/actions"
 import toast from "react-hot-toast"
@@ -82,10 +82,18 @@ export default function CategoryTree({ data, availableSections = [], members = [
       setFile(null)
       
       // Default to "Datos pieza" section if it exists
-      const defaultSections = availableSections
-        .filter(s => s.name?.toLowerCase().trim() === 'datos pieza')
-        .map(s => s.id)
-      setSelectedSections(defaultSections)
+      const datosPiezaId = availableSections.find(s => s.name?.toLowerCase().trim() === 'datos pieza')?.id
+      if (editNode) {
+        let sections = editNode.sections?.map((s: any) => s.sectionId) || []
+        if (datosPiezaId && !sections.includes(datosPiezaId)) {
+          sections.unshift(datosPiezaId)
+        } else if (datosPiezaId && sections.indexOf(datosPiezaId) > 0) {
+          sections = [datosPiezaId, ...sections.filter((id: string) => id !== datosPiezaId)]
+        }
+        setSelectedSections(sections)
+      } else {
+        setSelectedSections(datosPiezaId ? [datosPiezaId] : [])
+      }
       setCategoryHasChildren(false)
     }
     setModalOpen(true)
@@ -395,45 +403,94 @@ export default function CategoryTree({ data, availableSections = [], members = [
                   </div>
                   
                   {!categoryHasChildren && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-                    {availableSections.map((section: any) => {
-                      const isSelected = selectedSections.includes(section.id)
-                      const isDatosPieza = section.name?.toLowerCase().trim() === 'datos pieza';
-                      
-                      return (
-                        <label 
-                          key={section.id} 
-                          className={`flex items-start gap-3 text-sm p-3.5 border rounded-xl cursor-pointer transition-all ${
-                            isSelected 
-                              ? 'border-[#31573c] bg-white shadow-sm ring-1 ring-[#31573c]' 
-                              : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="mt-0.5">
-                            <input 
-                              type="checkbox"
-                              checked={isSelected}
-                              disabled={isDatosPieza}
-                              className={`rounded h-4.5 w-4.5 ${isDatosPieza ? 'text-gray-300 border-gray-200 cursor-not-allowed' : 'text-[#31573c] border-gray-300 focus:ring-[#31573c]'}`}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedSections([...selectedSections, section.id])
-                                } else {
-                                  setSelectedSections(selectedSections.filter(id => id !== section.id))
-                                }
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <span className="font-bold block text-gray-900 flex items-center gap-2">
-                              {section.name}
-                              {isDatosPieza && <span className="text-[9px] font-bold bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded uppercase tracking-widest">Fijo</span>}
-                            </span>
-                            <span className="block text-xs text-gray-500 mt-1">{section.fields?.length || 0} campos configurados</span>
-                          </div>
-                        </label>
-                      )
-                    })}
+                    <div className="flex flex-col gap-3 max-h-72 overflow-y-auto pr-2 custom-scrollbar">
+                    {(() => {
+                      const datosPiezaId = availableSections.find(s => s.name?.toLowerCase().trim() === 'datos pieza')?.id;
+                      const sorted = [...availableSections].sort((a, b) => {
+                        if (a.id === datosPiezaId) return -1;
+                        if (b.id === datosPiezaId) return 1;
+                        const aIdx = selectedSections.indexOf(a.id);
+                        const bIdx = selectedSections.indexOf(b.id);
+                        if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+                        if (aIdx !== -1) return -1;
+                        if (bIdx !== -1) return 1;
+                        return a.name.localeCompare(b.name);
+                      });
+
+                      return sorted.map((section: any) => {
+                        const isSelected = selectedSections.includes(section.id);
+                        const isDatosPieza = section.id === datosPiezaId;
+                        const selectedIdx = selectedSections.indexOf(section.id);
+                        
+                        return (
+                          <label 
+                            key={section.id} 
+                            className={`flex items-center gap-3 text-sm p-3.5 border rounded-xl cursor-pointer transition-all ${
+                              isSelected 
+                                ? 'border-[#31573c] bg-white shadow-sm ring-1 ring-[#31573c]' 
+                                : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 flex-1">
+                              <input 
+                                type="checkbox"
+                                checked={isSelected}
+                                disabled={isDatosPieza}
+                                className={`rounded h-4.5 w-4.5 ${isDatosPieza ? 'text-gray-300 border-gray-200 cursor-not-allowed' : 'text-[#31573c] border-gray-300 focus:ring-[#31573c]'}`}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedSections([...selectedSections, section.id])
+                                  } else {
+                                    setSelectedSections(selectedSections.filter(id => id !== section.id))
+                                  }
+                                }}
+                              />
+                              <div>
+                                <span className="font-bold block text-gray-900 flex items-center gap-2">
+                                  {section.name}
+                                  {isDatosPieza && <span className="text-[9px] font-bold bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded uppercase tracking-widest">Fijo / 1º</span>}
+                                  {isSelected && !isDatosPieza && <span className="text-[10px] font-bold bg-green-100 text-green-700 px-1.5 py-0.5 rounded ml-1">{selectedIdx + 1}º</span>}
+                                </span>
+                                <span className="block text-xs text-gray-500 mt-1">{section.fields?.length || 0} campos configurados</span>
+                              </div>
+                            </div>
+
+                            {isSelected && !isDatosPieza && (
+                              <div className="flex flex-col gap-1 items-center justify-center border-l border-gray-200 pl-3 ml-2">
+                                <button
+                                  type="button"
+                                  disabled={selectedIdx <= 1}
+                                  onClick={(e) => {
+                                    e.preventDefault(); e.stopPropagation();
+                                    if (selectedIdx <= 1) return;
+                                    const newArr = [...selectedSections];
+                                    [newArr[selectedIdx - 1], newArr[selectedIdx]] = [newArr[selectedIdx], newArr[selectedIdx - 1]];
+                                    setSelectedSections(newArr);
+                                  }}
+                                  className="text-gray-400 hover:text-[#31573c] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  <ChevronUp size={20} />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={selectedIdx === selectedSections.length - 1}
+                                  onClick={(e) => {
+                                    e.preventDefault(); e.stopPropagation();
+                                    if (selectedIdx === selectedSections.length - 1) return;
+                                    const newArr = [...selectedSections];
+                                    [newArr[selectedIdx + 1], newArr[selectedIdx]] = [newArr[selectedIdx], newArr[selectedIdx + 1]];
+                                    setSelectedSections(newArr);
+                                  }}
+                                  className="text-gray-400 hover:text-[#31573c] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  <ChevronDown size={20} />
+                                </button>
+                              </div>
+                            )}
+                          </label>
+                        )
+                      });
+                    })()}
                   </div>
                   )}
                 </div>

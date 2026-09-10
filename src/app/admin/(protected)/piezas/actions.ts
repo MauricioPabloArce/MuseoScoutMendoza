@@ -20,7 +20,8 @@ export async function getPieces() {
 export async function getFieldsForCategory(categoryId: string) {
   const categorySections = await prisma.categorySection.findMany({
     where: { categoryId },
-    select: { sectionId: true }
+    select: { sectionId: true, order: true },
+    orderBy: { order: 'asc' }
   })
   const sectionIds = categorySections.map(cs => cs.sectionId)
 
@@ -29,11 +30,18 @@ export async function getFieldsForCategory(categoryId: string) {
       sectionId: { in: sectionIds },
       isActive: true
     },
-    orderBy: { order: 'asc' },
     include: { options: { orderBy: { order: 'asc' } }, section: true }
   })
 
-  return fields
+  // Ordenar primero por el orden elegido en CategorySection, luego por el orden del Field
+  const sortedFields = fields.sort((a, b) => {
+    const aOrder = categorySections.find(cs => cs.sectionId === a.sectionId)?.order ?? 999
+    const bOrder = categorySections.find(cs => cs.sectionId === b.sectionId)?.order ?? 999
+    if (aOrder !== bOrder) return aOrder - bOrder
+    return a.order - b.order
+  })
+
+  return sortedFields
 }
 
 // Atomic generation of the registry code
