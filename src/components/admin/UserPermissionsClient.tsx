@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Users, Shield, Tag, X, Trash2, AlertTriangle } from "lucide-react"
-import { updateUserRole, assignCategoryPermission, removeCategoryPermission, deleteUser } from "@/app/admin/(protected)/usuarios/actions"
+import { updateUserRole, assignCategoryPermission, removeCategoryPermission, deleteUser, updateTeamMemberProfile } from "@/app/admin/(protected)/usuarios/actions"
 import toast from "react-hot-toast"
 
 export default function UserPermissionsClient({ users, categories }: { users: any[], categories: any[] }) {
@@ -10,6 +10,27 @@ export default function UserPermissionsClient({ users, categories }: { users: an
   const [newCatId, setNewCatId] = useState("")
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [userToDelete, setUserToDelete] = useState<{id: string, name: string} | null>(null)
+  
+  // Team Member State
+  const [isTeamMember, setIsTeamMember] = useState(false)
+  const [teamPosition, setTeamPosition] = useState("")
+
+  const handleSelectUser = (user: any) => {
+    setSelectedUser(user)
+    setIsTeamMember(user.member?.isTeamMember || false)
+    setTeamPosition(user.member?.teamPosition || "")
+  }
+
+  const handleSaveTeamProfile = async () => {
+    if (!selectedUser) return
+    const res = await updateTeamMemberProfile(selectedUser.id, isTeamMember, teamPosition)
+    if (res.success) {
+      toast.success("Perfil de equipo actualizado")
+      setTimeout(() => window.location.reload(), 1000)
+    } else {
+      toast.error("Error actualizando perfil")
+    }
+  }
 
   const handleRoleChange = async (userId: string, role: string) => {
     const res = await updateUserRole(userId, role)
@@ -65,6 +86,7 @@ export default function UserPermissionsClient({ users, categories }: { users: an
               <th className="px-6 py-3 font-semibold text-gray-600">Nombre</th>
               <th className="px-6 py-3 font-semibold text-gray-600">Email</th>
               <th className="px-6 py-3 font-semibold text-gray-600">Rol</th>
+              <th className="px-6 py-3 font-semibold text-gray-600 text-center">Equipo Museo</th>
               <th className="px-6 py-3 font-semibold text-gray-600 text-center">Permisos Esp.</th>
               <th className="px-6 py-3 font-semibold text-gray-600">Acciones</th>
             </tr>
@@ -86,6 +108,15 @@ export default function UserPermissionsClient({ users, categories }: { users: an
                   </select>
                 </td>
                 <td className="px-6 py-4 text-center">
+                  {user.member?.isTeamMember ? (
+                    <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                      Sí
+                    </span>
+                  ) : (
+                    <span className="text-gray-400 text-xs">No</span>
+                  )}
+                </td>
+                <td className="px-6 py-4 text-center">
                   <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
                     {user.member?.permissions?.length || 0} ramas
                   </span>
@@ -93,7 +124,7 @@ export default function UserPermissionsClient({ users, categories }: { users: an
                 <td className="px-6 py-4">
                   <div className="flex gap-3">
                     <button 
-                      onClick={() => setSelectedUser(user)}
+                      onClick={() => handleSelectUser(user)}
                       className="text-blue-600 hover:text-blue-800 font-medium"
                     >
                       Configurar
@@ -124,7 +155,40 @@ export default function UserPermissionsClient({ users, categories }: { users: an
                 <h3 className="font-bold text-lg text-gray-800">{selectedUser.name}</h3>
                 <p className="text-sm text-gray-500">{selectedUser.member?.role}</p>
               </div>
-              <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-gray-600"><X size={20}/></button>
+              <button onClick={() => handleSelectUser(null)} className="text-gray-400 hover:text-gray-600"><X size={20}/></button>
+            </div>
+
+            <div className="mb-6 p-4 bg-gray-50 rounded border border-gray-200">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">Perfil Público del Museo</h4>
+              <label className="flex items-center gap-2 mb-3 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  className="rounded text-[#1d4328] focus:ring-[#1d4328]"
+                  checked={isTeamMember}
+                  onChange={(e) => setIsTeamMember(e.target.checked)}
+                />
+                <span className="text-sm font-medium text-gray-800">Es miembro del equipo del museo</span>
+              </label>
+              
+              {isTeamMember && (
+                <div className="mb-3">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Cargo Público (Ej: Director, Curador)</label>
+                  <input 
+                    type="text" 
+                    className="w-full border border-gray-300 rounded p-2 text-sm"
+                    placeholder="Escriba el cargo..."
+                    value={teamPosition}
+                    onChange={(e) => setTeamPosition(e.target.value)}
+                  />
+                </div>
+              )}
+              
+              <button 
+                onClick={handleSaveTeamProfile}
+                className="w-full bg-[#374151] hover:bg-[#4b5563] text-white py-1.5 rounded text-sm transition-colors"
+              >
+                Guardar Perfil
+              </button>
             </div>
             
             <div className="mb-6">

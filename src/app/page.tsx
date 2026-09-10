@@ -3,6 +3,7 @@ import Link from "next/link"
 import { Search, Compass, Shield, BookOpen } from "lucide-react"
 import prisma from "@/lib/prisma"
 import Footer from "@/components/public/Footer"
+import Header from "@/components/public/Header"
 
 export default async function HomePage() {
   const categories = await prisma.category.findMany({
@@ -21,23 +22,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-[#eae6df] font-sans">
       {/* Header Público */}
-      <header className="bg-[#1f2937] text-[#f5f2eb] py-4 px-6 md:px-12 flex justify-between items-center sticky top-0 z-50 shadow-md">
-        <div className="flex items-center gap-4">
-          <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain" />
-          <div>
-            <h1 className="text-xl font-serif font-bold tracking-wider">MUSEO SCOUT MENDOZA</h1>
-            <p className="text-xs text-gray-300 tracking-widest uppercase mt-0.5">"Hno Gris Cayetano Ponso"</p>
-          </div>
-        </div>
-        <nav className="hidden md:flex gap-6 text-sm font-medium">
-          <Link href="/" className="hover:text-white transition-colors">Inicio</Link>
-          <Link href="/catalogo" className="hover:text-white transition-colors">Catálogo</Link>
-          <Link href="/nosotros" className="hover:text-white transition-colors">Sobre el Museo</Link>
-        </nav>
-        <Link href="/admin/login" className="text-xs border border-gray-400 px-3 py-1.5 rounded hover:bg-[#374151] transition-colors">
-          Acceso Interno
-        </Link>
-      </header>
+      <Header />
 
       {/* Hero Section */}
       <section className="relative bg-[#374151] text-white py-24 px-6 overflow-hidden">

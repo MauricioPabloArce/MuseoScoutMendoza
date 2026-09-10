@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma"
 import Link from "next/link"
 import Footer from "@/components/public/Footer"
+import Header from "@/components/public/Header"
 
 import CatalogFilters from "@/components/public/CatalogFilters"
 import CatalogGrid from "@/components/public/CatalogGrid"
@@ -65,15 +66,7 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="min-h-screen bg-[#eae6df] font-sans flex flex-col">
-      <header className="bg-[#1f2937] text-[#f5f2eb] py-4 px-6 flex justify-between items-center shadow-md sticky top-0 z-50">
-        <Link href="/" className="flex items-center gap-4 group">
-          <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain transition-transform group-hover:scale-105" />
-          <h1 className="text-xl font-serif font-bold tracking-wider hidden sm:block">MUSEO SCOUT MENDOZA</h1>
-        </Link>
-        <Link href="/" className="text-sm border border-gray-500 text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-800 hover:text-white transition-colors">
-          Volver al Inicio
-        </Link>
-      </header>
+      <Header />
 
       <main className="flex-1 w-full max-w-[1400px] mx-auto py-8 px-4 sm:px-6 lg:px-8">
         

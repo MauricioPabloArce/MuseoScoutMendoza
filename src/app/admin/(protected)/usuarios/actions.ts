@@ -43,6 +43,25 @@ export async function updateUserRole(userId: string, role: string) {
   return { success: true }
 }
 
+export async function updateTeamMemberProfile(userId: string, isTeamMember: boolean, teamPosition: string) {
+  const session = await auth()
+  if (!session?.user) throw new Error("No autorizado")
+
+  const actingUser = await prisma.museumMember.findUnique({ where: { userId: session.user.id } })
+  if (actingUser?.role !== 'ADMIN' && actingUser?.role !== 'SUPERADMIN') {
+      if (session.user.id !== 'dev-admin-id') throw new Error("Solo administradores pueden cambiar roles")
+  }
+
+  await prisma.museumMember.upsert({
+    where: { userId },
+    update: { isTeamMember, teamPosition: teamPosition || null },
+    create: { userId, isTeamMember, teamPosition: teamPosition || null }
+  })
+  
+  revalidatePath("/admin/usuarios")
+  return { success: true }
+}
+
 export async function assignCategoryPermission(userId: string, categoryId: string) {
   const session = await auth()
   if (!session?.user) throw new Error("No autorizado")
