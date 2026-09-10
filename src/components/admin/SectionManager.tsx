@@ -34,7 +34,7 @@ export default function SectionManager({ sections }: { sections: any[] }) {
       if (expandedSectionId === sectionToDelete.id) setExpandedSectionId(null)
       setSectionToDelete(null)
     } else {
-      toast.error(res.error || "Error al eliminar")
+      toast.error((res as any).error || "Error al eliminar")
     }
   }
 
@@ -47,7 +47,7 @@ export default function SectionManager({ sections }: { sections: any[] }) {
       toast.success("Campo eliminado")
       setFieldToDelete(null)
     } else {
-      toast.error(res.error || "Error al eliminar")
+      toast.error((res as any).error || "Error al eliminar")
     }
   }
 

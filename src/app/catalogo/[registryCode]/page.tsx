@@ -26,6 +26,12 @@ export default async function PieceDetailPage({ params }: { params: Promise<{ re
     notFound()
   }
 
+  const titleField = piece.fieldValues.find((fv: any) => fv.field?.internalKey === 'titulo');
+  const title = titleField?.value || 'Sin Título';
+
+  const imageField = piece.fieldValues.find((fv: any) => fv.field?.internalKey === 'imagen_principal');
+  const mainImageUrl = imageField?.value || null;
+
   return (
     <div className="min-h-screen bg-[#eae6df] font-sans pb-20">
       <header className="bg-[#1f2937] text-[#f5f2eb] py-4 px-6 flex justify-between items-center shadow-md">
@@ -42,12 +48,12 @@ export default async function PieceDetailPage({ params }: { params: Promise<{ re
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row border border-[#d5cdbc]">
           {/* Columna Imágenes */}
           <div className="w-full md:w-1/2 bg-gray-100 flex flex-col items-center justify-center p-8 border-b md:border-b-0 md:border-r border-[#d5cdbc] min-h-[400px]">
-            {piece.mainImageUrl || (piece.media && piece.media.length > 0) ? (
+            {mainImageUrl || (piece.media && piece.media.length > 0) ? (
               <div className="space-y-6 w-full flex flex-col items-center">
-                {piece.mainImageUrl && (
+                {mainImageUrl && (
                   <img 
-                    src={piece.mainImageUrl} 
-                    alt={piece.title} 
+                    src={mainImageUrl} 
+                    alt={title} 
                     className="max-w-full max-h-[600px] object-contain drop-shadow-xl border-4 border-white"
                   />
                 )}
@@ -55,7 +61,7 @@ export default async function PieceDetailPage({ params }: { params: Promise<{ re
                   <img 
                     key={m.id}
                     src={m.url} 
-                    alt={`${piece.title} - Imagen adicional ${index + 1}`} 
+                    alt={`${title} - Imagen adicional ${index + 1}`} 
                     className="max-w-full max-h-[600px] object-contain drop-shadow-xl border-4 border-white"
                   />
                 ))}
@@ -74,7 +80,7 @@ export default async function PieceDetailPage({ params }: { params: Promise<{ re
               <span className="inline-block text-sm font-mono font-bold text-[#374151] bg-gray-100 px-3 py-1 rounded-full border border-gray-200 mb-4">
                 {piece.registryCode}
               </span>
-              <h1 className="text-3xl lg:text-4xl font-serif font-bold text-gray-900 mb-2">{piece.title}</h1>
+              <h1 className="text-3xl lg:text-4xl font-serif font-bold text-gray-900 mb-2">{title}</h1>
               <div className="flex items-center gap-2 text-[#374151] font-medium">
                 <Tag size={16} /> {piece.category.name}
               </div>

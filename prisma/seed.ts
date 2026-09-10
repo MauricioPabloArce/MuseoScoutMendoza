@@ -66,14 +66,23 @@ async function main() {
     },
   })
 
+  const sectionDatos = await prisma.fieldSection.create({
+    data: { name: 'Datos Pieza', description: 'Datos fijos obligatorios' }
+  })
+
   // 3. Campos generales
+  const fTitulo = await prisma.fieldDefinition.create({
+    data: {
+      name: 'Título', internalKey: 'titulo', type: 'TEXT', sectionId: sectionDatos.id,
+    }
+  })
+
   const fEstado = await prisma.fieldDefinition.create({
     data: {
       name: 'Estado de Conservación',
       internalKey: 'estado_conservacion',
       type: 'SELECT',
-      isGeneral: true,
-      isPublic: true,
+      sectionId: sectionDatos.id,
       options: {
         create: [
           { label: 'Excelente', value: 'excelente', order: 1 },
@@ -90,8 +99,7 @@ async function main() {
       name: 'Procedencia',
       internalKey: 'procedencia',
       type: 'TEXT',
-      isGeneral: true,
-      isPublic: true,
+      sectionId: sectionDatos.id,
     },
   })
 
@@ -101,13 +109,7 @@ async function main() {
       name: 'Material',
       internalKey: 'material',
       type: 'TEXT',
-      isGeneral: false,
-      isPublic: true,
-      categoryFields: {
-        create: {
-          categoryId: catInsigniasArgEventos.id,
-        },
-      },
+      sectionId: sectionDatos.id,
     },
   })
 
@@ -116,14 +118,7 @@ async function main() {
       name: 'Año',
       internalKey: 'ano',
       type: 'NUMBER',
-      isGeneral: false,
-      isPublic: true,
-      categoryFields: {
-        create: [
-          { categoryId: catInsigniasArgEventos.id },
-          { categoryId: catLibros.id }
-        ]
-      },
+      sectionId: sectionDatos.id,
     },
   })
 
@@ -131,11 +126,11 @@ async function main() {
   await prisma.museumPiece.create({
     data: {
       registryCode: 'IN-2026-000001',
-      title: 'Insignia Campamento Nacional 1965',
       categoryId: catInsigniasArgEventos.id,
       status: 'PUBLISHED',
       fieldValues: {
         create: [
+          { fieldId: fTitulo.id, value: 'Insignia Campamento Nacional 1965' },
           { fieldId: fEstado.id, value: 'bueno' },
           { fieldId: fProcedencia.id, value: 'Donación anónima' },
           { fieldId: fMaterial.id, value: 'Tela bordada' },
@@ -148,11 +143,11 @@ async function main() {
   await prisma.museumPiece.create({
     data: {
       registryCode: 'DO-2026-000002',
-      title: 'Manual del Lobato (1era Edición)',
       categoryId: catLibros.id,
       status: 'PUBLISHED',
       fieldValues: {
         create: [
+          { fieldId: fTitulo.id, value: 'Manual del Lobato (1era Edición)' },
           { fieldId: fEstado.id, value: 'regular' },
           { fieldId: fAno.id, value: '1916' },
         ],
