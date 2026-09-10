@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronRight, ChevronDown, ChevronUp, Folder, FolderOpen, MoreVertical, Plus, Edit, Eye, EyeOff, Archive, Save, Trash2, AlertTriangle } from "lucide-react"
+import { ChevronRight, ChevronDown, ChevronUp, Folder, FolderOpen, MoreVertical, Plus, Edit, Eye, EyeOff, Archive, Save, Trash2, AlertTriangle, ShieldX } from "lucide-react"
 import type { CategoryWithPieceCount } from "@/app/admin/(protected)/categorias/actions"
 import { uploadCategoryImage, togglePublishCategory, archiveCategory, deleteCategory, createCategory, updateCategory } from "@/app/admin/(protected)/categorias/actions"
 import toast from "react-hot-toast"
@@ -37,7 +37,7 @@ function buildTree(categories: any[]): TreeNode[] {
   return roots
 }
 
-export default function CategoryTree({ data, availableSections = [], members = [] }: { data: any[], availableSections?: any[], members?: any[] }) {
+export default function CategoryTree({ data, availableSections = [], members = [], userRole = 'VIEWER' }: { data: any[], availableSections?: any[], members?: any[], userRole?: string }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [modalOpen, setModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
@@ -54,6 +54,8 @@ export default function CategoryTree({ data, availableSections = [], members = [
   const [selectedSections, setSelectedSections] = useState<string[]>([])
   const [categoryHasChildren, setCategoryHasChildren] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [noPermissionModal, setNoPermissionModal] = useState(false)
+  const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN'
   
   const tree = buildTree(data)
 
@@ -187,6 +189,7 @@ export default function CategoryTree({ data, availableSections = [], members = [
             )}
           </div>
 
+          {isAdmin && (
           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
             <button 
               className="p-1.5 text-gray-400 hover:text-green-600 rounded" 
@@ -220,6 +223,7 @@ export default function CategoryTree({ data, availableSections = [], members = [
               <Trash2 size={16} />
             </button>
           </div>
+          )}
         </div>
         
         {isExpanded && hasChildren && (
@@ -236,12 +240,21 @@ export default function CategoryTree({ data, availableSections = [], members = [
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div className="bg-gray-50 border-b border-gray-200 px-4 py-3 flex justify-between items-center">
           <h3 className="font-semibold text-gray-700">Estructura del Acervo</h3>
+          {isAdmin ? (
           <button 
             onClick={() => openModal(undefined)}
             className="text-sm bg-[#374151] hover:bg-[#4b5563] text-white px-3 py-1.5 rounded flex items-center gap-1 transition-colors"
           >
             <Plus size={16} /> Categoría Raíz
           </button>
+          ) : (
+          <button 
+            onClick={() => setNoPermissionModal(true)}
+            className="text-sm bg-gray-400 hover:bg-gray-500 text-white px-3 py-1.5 rounded flex items-center gap-1 transition-colors"
+          >
+            <Plus size={16} /> Categoría Raíz
+          </button>
+          )}
         </div>
         <div className="p-2 min-h-[400px]">
           {tree.length === 0 ? (
@@ -554,6 +567,38 @@ export default function CategoryTree({ data, availableSections = [], members = [
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm font-medium"
               >
                 Eliminar Definitivamente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* No Permission Modal */}
+      {noPermissionModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-red-50">
+              <h3 className="font-bold text-red-800 flex items-center gap-2">
+                <ShieldX className="text-red-500" size={18} />
+                Sin permisos de acceso
+              </h3>
+              <button onClick={() => setNoPermissionModal(false)} className="text-gray-400 hover:text-gray-600">×</button>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-700 mb-3">
+                No tenés permisos para crear o modificar categorías del acervo.
+              </p>
+              <p className="text-sm text-gray-500">
+                La gestión de categorías está reservada para <strong>administradores</strong>. Si necesitás acceso, contactá al responsable del sistema.
+              </p>
+            </div>
+            <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setNoPermissionModal(false)}
+                className="px-4 py-2 bg-[#1d4328] text-white rounded hover:bg-[#255633] text-sm font-medium"
+              >
+                Entendido
               </button>
             </div>
           </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronRight, ChevronDown, Folder, FolderOpen, PackageSearch, Plus, Edit, Trash2, AlertTriangle } from "lucide-react"
+import { ChevronRight, ChevronDown, Folder, FolderOpen, PackageSearch, Plus, Edit, Trash2, AlertTriangle, ShieldX } from "lucide-react"
 import Link from "next/link"
 import toast from "react-hot-toast"
 import { archivePiece, deletePiece } from "@/app/admin/(protected)/piezas/actions"
@@ -43,7 +43,7 @@ function buildTree(categories: Category[]): TreeNode[] {
   return roots
 }
 
-export default function PieceExplorer({ categories, pieces }: { categories: Category[], pieces: Piece[] }) {
+export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' }: { categories: Category[], pieces: Piece[], userRole?: string }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
   
@@ -55,6 +55,8 @@ export default function PieceExplorer({ categories, pieces }: { categories: Cate
   const [pieceToArchive, setPieceToArchive] = useState<{id: string, title: string} | null>(null)
 
   const [isDeleting, setIsDeleting] = useState(false)
+  const [noPermissionModal, setNoPermissionModal] = useState(false)
+  const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN'
   
   const tree = buildTree(categories)
 
@@ -173,12 +175,21 @@ export default function PieceExplorer({ categories, pieces }: { categories: Cate
               ? `Piezas en "${categories.find(c => c.id === selectedCategoryId)?.name}"`
               : "Todas las Piezas"}
           </h3>
-          <Link 
-            href={`/admin/piezas/crear${selectedCategoryId ? `?categoryId=${selectedCategoryId}` : ''}`}
-            className="text-sm bg-[#1d4328] hover:bg-[#255633] text-white px-3 py-1.5 rounded flex items-center gap-1 transition-colors"
-          >
-            <Plus size={16} /> Registrar Pieza
-          </Link>
+          {isAdmin ? (
+            <Link 
+              href={`/admin/piezas/crear${selectedCategoryId ? `?categoryId=${selectedCategoryId}` : ''}`}
+              className="text-sm bg-[#1d4328] hover:bg-[#255633] text-white px-3 py-1.5 rounded flex items-center gap-1 transition-colors"
+            >
+              <Plus size={16} /> Registrar Pieza
+            </Link>
+          ) : (
+            <button
+              onClick={() => setNoPermissionModal(true)}
+              className="text-sm bg-gray-400 hover:bg-gray-500 text-white px-3 py-1.5 rounded flex items-center gap-1 transition-colors"
+            >
+              <Plus size={16} /> Registrar Pieza
+            </button>
+          )}
         </div>
         
         <div className="overflow-y-auto flex-1 p-0">
@@ -317,6 +328,38 @@ export default function PieceExplorer({ categories, pieces }: { categories: Cate
                 className="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isDeleting ? "Archivando..." : "Archivar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* No Permission Modal */}
+      {noPermissionModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-red-50">
+              <h3 className="font-bold text-red-800 flex items-center gap-2">
+                <ShieldX className="text-red-500" size={18} />
+                Sin permisos de acceso
+              </h3>
+              <button onClick={() => setNoPermissionModal(false)} className="text-gray-400 hover:text-gray-600">×</button>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-700 mb-3">
+                No tenés permisos para registrar o editar piezas en el acervo.
+              </p>
+              <p className="text-sm text-gray-500">
+                Para poder hacerlo, un <strong>administrador</strong> debe asignarte acceso a una o más ramas del árbol de categorías desde <strong>Usuarios y Accesos</strong>.
+              </p>
+            </div>
+            <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setNoPermissionModal(false)}
+                className="px-4 py-2 bg-[#1d4328] text-white rounded hover:bg-[#255633] text-sm font-medium"
+              >
+                Entendido
               </button>
             </div>
           </div>

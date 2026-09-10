@@ -2,10 +2,18 @@ import { getPieces } from "./actions"
 import { getCategories } from "@/app/admin/(protected)/categorias/actions"
 import { PackageSearch } from "lucide-react"
 import PieceExplorer from "@/components/admin/PieceExplorer"
+import { auth } from "@/auth"
+import prisma from "@/lib/prisma"
 
 export default async function PiezasPage() {
   const pieces = await getPieces()
   const categories = await getCategories()
+  const session = await auth()
+  let userRole = 'VIEWER'
+  if (session?.user?.id) {
+    const member = await prisma.museumMember.findUnique({ where: { userId: session.user.id } })
+    userRole = member?.role || 'VIEWER'
+  }
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -21,7 +29,7 @@ export default async function PiezasPage() {
         </div>
       </div>
 
-      <PieceExplorer categories={categories} pieces={pieces} />
+      <PieceExplorer categories={categories} pieces={pieces} userRole={userRole} />
     </div>
   )
 }
