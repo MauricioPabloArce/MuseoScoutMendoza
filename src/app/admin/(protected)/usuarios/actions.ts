@@ -73,7 +73,11 @@ export async function assignCategoryPermission(userId: string, categoryId: strin
     await prisma.categoryPermission.create({
       data: {
         memberId: member.id,
-        categoryId: categoryId
+        categoryId: categoryId,
+        includeDescendants: true,
+        canCreate: true,
+        canEdit: true,
+        canArchive: true
       }
     })
     revalidatePath("/admin/usuarios")

@@ -106,6 +106,33 @@ export async function uploadImage(formData: FormData) {
   return { url: `/uploads/${safeCat}/${filename}` }
 }
 
+async function checkUserPermission(userId: string, categoryId: string, action: 'create' | 'edit' | 'archive'): Promise<boolean> {
+  const member = await prisma.museumMember.findUnique({
+    where: { userId },
+    include: { permissions: true }
+  })
+  if (!member) return false
+  if (member.role === 'ADMIN' || member.role === 'SUPERADMIN') return true
+  if (member.role === 'VIEWER') return false
+
+  // For COLLABORATOR: Check if user has explicit permission on this category or any ancestor.
+  // Note: includeDescendants is true by default for all assignments.
+  const allCategories = await prisma.category.findMany({ select: { id: true, parentId: true } })
+  
+  let currentCatId: string | null = categoryId
+  while (currentCatId) {
+    const perm = member.permissions.find(p => p.categoryId === currentCatId)
+    if (perm) {
+      if (action === 'create' && perm.canCreate) return true
+      if (action === 'edit' && perm.canEdit) return true
+      if (action === 'archive' && perm.canArchive) return true
+    }
+    const cat = allCategories.find(c => c.id === currentCatId)
+    currentCatId = cat?.parentId || null
+  }
+  return false
+}
+
 export async function createPiece(data: {
   categoryId: string
   status: string
@@ -114,6 +141,9 @@ export async function createPiece(data: {
 }) {
   const session = await auth()
   if (!session?.user) throw new Error("No autorizado")
+
+  const hasPerm = await checkUserPermission(session.user.id, data.categoryId, 'create')
+  if (!hasPerm) return { success: false, error: "No tienes permisos para crear piezas en esta rama del acervo." }
 
   try {
     const registryCode = await generateRegistryCode(data.categoryId)
@@ -168,6 +198,9 @@ export async function updatePiece(id: string, data: {
   const session = await auth()
   if (!session?.user) throw new Error("No autorizado")
 
+  const hasPerm = await checkUserPermission(session.user.id, data.categoryId, 'edit')
+  if (!hasPerm) return { success: false, error: "No tienes permisos para editar piezas en esta rama del acervo." }
+
   try {
     // Delete existing field values and replace them
     await prisma.pieceFieldValue.deleteMany({
@@ -210,6 +243,12 @@ export async function archivePiece(id: string) {
   if (!session?.user) throw new Error("No autorizado")
 
   try {
+    const piece = await prisma.museumPiece.findUnique({ where: { id } })
+    if (!piece) return { success: false, error: "Pieza no encontrada" }
+
+    const hasPerm = await checkUserPermission(session.user.id, piece.categoryId, 'archive')
+    if (!hasPerm) return { success: false, error: "No tienes permisos para archivar esta pieza." }
+
     await prisma.museumPiece.update({
       where: { id },
       data: { status: "ARCHIVED" }
@@ -231,22 +270,8 @@ export async function deletePiece(id: string) {
     const piece = await prisma.museumPiece.findUnique({ where: { id } })
     if (!piece) return { success: false, error: "Pieza no encontrada" }
 
-    // Verificar permisos del usuario
-    const member = await prisma.museumMember.findUnique({
-      where: { userId: session.user.id }
-    })
-    
-    if (!member) return { success: false, error: "No tienes permisos para esta acción" }
-    
-    // Solo ADMIN puede eliminar, o usuario con permiso canArchive en la categoría
-    if (member.role !== 'ADMIN') {
-      const permission = await prisma.categoryPermission.findUnique({
-        where: { memberId_categoryId: { memberId: member.id, categoryId: piece.categoryId } }
-      })
-      if (!permission?.canArchive) {
-        return { success: false, error: "No tienes permisos para eliminar piezas en esta categoría" }
-      }
-    }
+    const hasPerm = await checkUserPermission(session.user.id, piece.categoryId, 'archive')
+    if (!hasPerm) return { success: false, error: "No tienes permisos para eliminar piezas en esta rama." }
 
     // Eliminar relaciones explícitamente para evitar problemas de FK
     await prisma.pieceFieldValue.deleteMany({ where: { pieceId: id } })

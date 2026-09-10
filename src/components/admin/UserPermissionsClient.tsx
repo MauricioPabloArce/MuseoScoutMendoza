@@ -15,6 +15,22 @@ export default function UserPermissionsClient({ users, categories }: { users: an
   const [isTeamMember, setIsTeamMember] = useState(false)
   const [teamPosition, setTeamPosition] = useState("")
 
+  // Flatten categories for dropdown
+  const flattenCategories = (cats: any[], parentId: string | null = null, depth = 0): any[] => {
+    let result: any[] = []
+    const children = cats.filter(c => c.parentId === parentId)
+    
+    for (const child of children) {
+      result.push({
+        id: child.id,
+        name: `${'— '.repeat(depth)}${child.name}`
+      })
+      result = result.concat(flattenCategories(cats, child.id, depth + 1))
+    }
+    return result
+  }
+  const structuredCategories = flattenCategories(categories)
+
   const handleSelectUser = (user: any) => {
     setSelectedUser(user)
     if (user) {
@@ -227,7 +243,7 @@ export default function UserPermissionsClient({ users, categories }: { users: an
                         onChange={(e) => setNewCatId(e.target.value)}
                       >
                         <option value="">Seleccionar categoría...</option>
-                        {categories.map((c: any) => (
+                        {structuredCategories.map((c: any) => (
                           <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
                       </select>
