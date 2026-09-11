@@ -82,7 +82,11 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
   }
 
   const getPieceTitle = (piece: Piece) => {
-    return piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'titulo')?.value || "Sin Título"
+    const fv = piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'nombre') ||
+               piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'nombre_pieza') ||
+               piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'titulo') ||
+               piece.fieldValues?.find((fv: any) => fv.value && fv.value.trim() !== '')
+    return fv?.value || piece.registryCode || "Sin Título"
   }
 
   const handleDeleteConfirm = async () => {
