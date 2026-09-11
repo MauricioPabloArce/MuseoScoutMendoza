@@ -9,6 +9,8 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user
       const isOnAdmin = nextUrl.pathname.startsWith('/admin')
       const isLoginPath = nextUrl.pathname === '/admin/login'
+      const isOnProtectedPublic = nextUrl.pathname.startsWith('/acervo') || nextUrl.pathname.startsWith('/proyectos')
+      const isPublicLoginPath = nextUrl.pathname === '/ingresar'
       
       if (isOnAdmin) {
         if (isLoginPath) {
@@ -16,9 +18,23 @@ export const authConfig = {
           return true
         }
         if (isLoggedIn) return true
-        return false // Redirigir a login si no está autenticado
+        return false // Redirigir a login de admin si no está autenticado
       } else if (isLoggedIn && isLoginPath) {
         return Response.redirect(new URL('/admin', nextUrl))
+      }
+
+      if (isOnProtectedPublic) {
+        if (isLoggedIn) return true
+        // Redirect to friendly login screen for public users
+        const loginUrl = new URL('/ingresar', nextUrl)
+        loginUrl.searchParams.set('callbackUrl', nextUrl.pathname)
+        return Response.redirect(loginUrl)
+      }
+
+      if (isLoggedIn && isPublicLoginPath) {
+        // Redirect to their callback url or home if they are already logged in
+        const callbackUrl = nextUrl.searchParams.get('callbackUrl') || '/'
+        return Response.redirect(new URL(callbackUrl, nextUrl))
       }
       
       return true

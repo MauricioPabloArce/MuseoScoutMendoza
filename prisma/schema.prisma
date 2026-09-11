@@ -18,10 +18,19 @@ model User {
   bio           String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  
+  // Novedades y Comunicaciones
+  lastLoginAt                 DateTime?
+  emailMarketingConsent       Boolean   @default(false)
+  emailMarketingConsentAt     DateTime?
+  emailMarketingConsentSource String?
+  emailMarketingConsentVersion String?
+  emailUnsubscribedAt         DateTime?
 
   accounts Account[]
   sessions Session[]
   member   MuseumMember?
+  receivedEmails EmailCampaignRecipient[]
 }
 
 model Account {
@@ -292,5 +301,39 @@ model SpecialProjectImage {
   order     Int      @default(0)
   createdAt DateTime @default(now())
 
-  project SpecialProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   SpecialProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model EmailCampaign {
+  id              String   @id @default(cuid())
+  internalName    String
+  subject         String
+  preheader       String?
+  bodyBlocks      String   // JSON con los bloques del editor
+  status          String   @default("BORRADOR") // BORRADOR, PROGRAMADA, ENVIANDO, ENVIADA, CANCELADA, ERROR
+  totalRecipients Int      @default(0)
+  sentCount       Int      @default(0)
+  failedCount     Int      @default(0)
+  scheduledAt     DateTime?
+  sentAt          DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdBy       String?  // Id del admin que la creó
+
+  recipients      EmailCampaignRecipient[]
+}
+
+model EmailCampaignRecipient {
+  id          String   @id @default(cuid())
+  campaignId  String
+  userId      String?
+  email       String
+  status      String   @default("PENDING") // PENDING, SENT, DELIVERED, FAILED, BOUNCED, UNSUBSCRIBED
+  errorMsg    String?
+  sentAt      DateTime?
+
+  campaign    EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([campaignId, email])
 }

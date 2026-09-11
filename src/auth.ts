@@ -41,5 +41,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return session
     }
+  },
+  events: {
+    async signIn({ user }) {
+      if (user?.id && user.id !== 'dev-admin-id') {
+        try {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { lastLoginAt: new Date() }
+          })
+        } catch (e) {
+          console.error('Error updating lastLoginAt:', e)
+        }
+      }
+    }
   }
 })
