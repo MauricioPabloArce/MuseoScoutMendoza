@@ -292,11 +292,11 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
                       />
                     ) : (
                       <div className="flex gap-4 items-start bg-white p-3 border border-gray-200 rounded-lg">
-                        <div className="w-24 h-24 bg-gray-100 rounded border border-gray-200 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                        <div className="w-14 h-14 bg-gray-100 rounded border border-gray-200 flex-shrink-0 flex items-center justify-center overflow-hidden">
                           {block.type === 'image' ? (
-                            block.url ? <img src={block.url} alt="" className="w-full h-full object-cover" /> : <ImageIcon size={24} className="text-gray-400" />
+                            block.url ? <img src={block.url} alt="" className="w-full h-full object-cover" /> : <ImageIcon size={18} className="text-gray-400" />
                           ) : (
-                            <FileText size={32} className="text-[#0B69CA]" />
+                            <FileText size={22} className="text-[#0B69CA]" />
                           )}
                         </div>
                         <div className="flex-1 space-y-3">
