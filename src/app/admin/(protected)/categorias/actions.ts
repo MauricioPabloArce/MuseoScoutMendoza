@@ -107,10 +107,10 @@ export async function createCategory(data: { name: string; slug: string; prefix:
 
     await prisma.category.create({
       data: {
-        name: toSentenceCase(data.name) || data.name,
+        name: data.name,
         slug: data.slug,
         prefix: data.prefix,
-        description: toSentenceCase(data.description) || null,
+        description: data.description || null,
         parentId: data.parentId || null,
         imageUrl: data.imageUrl || null,
         leaderId: data.leaderId || null,
@@ -160,10 +160,10 @@ export async function updateCategory(id: string, data: { name: string; slug: str
     await prisma.category.update({
       where: { id },
       data: {
-        name: toSentenceCase(data.name) || data.name,
+        name: data.name,
         slug: data.slug,
         prefix: data.prefix,
-        description: toSentenceCase(data.description) || null,
+        description: data.description || null,
         parentId: data.parentId || null,
         imageUrl: data.imageUrl || null,
         leaderId: data.leaderId || null,

@@ -3,7 +3,8 @@
 import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { auth } from "@/auth"
-import { toSentenceCase } from "@/lib/utils"
+import { validateDynamicFieldValue } from "@/lib/utils"
+
 
 export async function getPieces() {
   return await prisma.museumPiece.findMany({
@@ -146,6 +147,14 @@ export async function createPiece(data: {
   const hasPerm = await checkUserPermission(session.user.id, data.categoryId, 'create')
   if (!hasPerm) return { success: false, error: "No tienes permisos para crear piezas en esta rama del acervo." }
 
+  // Validar campos dinámicos
+  for (const [fieldId, value] of Object.entries(data.fields)) {
+    const valRes = validateDynamicFieldValue(value)
+    if (!valRes.valid) {
+      return { success: false, error: `Error de formato en un campo: ${valRes.error}` }
+    }
+  }
+
   try {
     const registryCode = await generateRegistryCode(data.categoryId)
 
@@ -158,7 +167,7 @@ export async function createPiece(data: {
         fieldValues: {
           create: Object.entries(data.fields).map(([fieldId, value]) => ({
             fieldId,
-            value: toSentenceCase(value) || value
+            value
           }))
         },
         media: data.mediaUrls && data.mediaUrls.length > 0 ? {
@@ -202,6 +211,14 @@ export async function updatePiece(id: string, data: {
   const hasPerm = await checkUserPermission(session.user.id, data.categoryId, 'edit')
   if (!hasPerm) return { success: false, error: "No tienes permisos para editar piezas en esta rama del acervo." }
 
+  // Validar campos dinámicos
+  for (const [fieldId, value] of Object.entries(data.fields)) {
+    const valRes = validateDynamicFieldValue(value)
+    if (!valRes.valid) {
+      return { success: false, error: `Error de formato en un campo: ${valRes.error}` }
+    }
+  }
+
   try {
     // Delete existing field values and replace them
     await prisma.pieceFieldValue.deleteMany({
@@ -217,7 +234,7 @@ export async function updatePiece(id: string, data: {
         fieldValues: {
           create: Object.entries(data.fields).map(([fieldId, value]) => ({
             fieldId,
-            value: toSentenceCase(value) || value
+            value
           }))
         },
         // For media, we append for now. A full sync requires more logic
