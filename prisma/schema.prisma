@@ -71,6 +71,7 @@ model MuseumMember {
   user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   permissions   CategoryPermission[]
   ledCategories Category[]           @relation("CategoryLeader")
+  specialProjects SpecialProject[]   @relation("CreatorSpecialProjects")
 }
 
 model Category {
@@ -273,12 +274,14 @@ model SpecialProject {
   description String?
   content     String? // JSON serialized blocks
   objective   String?
+  coverImage  String? // URL of presentation image
   isPublished Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   createdBy   String? // memberId
 
-  images SpecialProjectImage[]
+  creator     MuseumMember? @relation("CreatorSpecialProjects", fields: [createdBy], references: [id])
+  images      SpecialProjectImage[]
 }
 
 model SpecialProjectImage {

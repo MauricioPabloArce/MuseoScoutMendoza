@@ -23,6 +23,7 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
   const [name, setName] = useState("")
   const [theme, setTheme] = useState("")
   const [objective, setObjective] = useState("")
+  const [coverImage, setCoverImage] = useState("")
   const [isPublished, setIsPublished] = useState(false)
   const [blocks, setBlocks] = useState<any[]>([])
   
@@ -37,6 +38,7 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
     setName(proj.name)
     setTheme(proj.theme || "")
     setObjective(proj.objective || "")
+    setCoverImage(proj.coverImage || "")
     setIsPublished(proj.isPublished || false)
     
     // Parse existing content or migrate from description+images
@@ -69,6 +71,7 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
     setName("")
     setTheme("")
     setObjective("")
+    setCoverImage("")
     setIsPublished(false)
     setBlocks([])
     setIsEditing(true)
@@ -158,6 +161,7 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
       description: firstText, // fallback for older displays
       content: JSON.stringify(blocks), // The new source of truth
       objective,
+      coverImage,
       isPublished,
       images: validImages // fallback gallery
     }
@@ -215,6 +219,43 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Objetivo</label>
               <textarea value={objective} onChange={e => setObjective(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#31573c] focus:outline-none min-h-[80px]" placeholder="¿Qué se busca lograr con esto?" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Imagen de Presentación (Tarjeta)</label>
+              {coverImage ? (
+                <div className="relative w-48 h-32 rounded-lg overflow-hidden border border-gray-300 shadow-sm group">
+                  <img src={coverImage} alt="Portada" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <button type="button" onClick={() => setCoverImage("")} className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <input 
+                    type="file" 
+                    id="cover-upload" 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={async (e) => {
+                      if (!e.target.files || e.target.files.length === 0) return
+                      const file = e.target.files[0]
+                      if (file.size > 5 * 1024 * 1024) { setShowSizeError(true); return }
+                      setIsLoading(true)
+                      const formData = new FormData()
+                      formData.append("file", file)
+                      const res = await uploadProjectImage(formData)
+                      setIsLoading(false)
+                      if (res.error) toast.error(res.error)
+                      else if (res.url) setCoverImage(res.url)
+                    }}
+                  />
+                  <button type="button" onClick={() => document.getElementById('cover-upload')?.click()} className="text-sm bg-white border border-[#31573c] text-[#31573c] hover:bg-gray-50 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50" disabled={isLoading}>
+                    <ImageIcon size={16} /> Subir Imagen de Portada
+                  </button>
+                </div>
+              )}
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">Contenido Dinámico del Proyecto</label>
