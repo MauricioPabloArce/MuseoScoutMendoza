@@ -147,11 +147,20 @@ export async function createPiece(data: {
   const hasPerm = await checkUserPermission(session.user.id, data.categoryId, 'create')
   if (!hasPerm) return { success: false, error: "No tienes permisos para crear piezas en esta rama del acervo." }
 
-  // Validar campos dinámicos
+  // Solo validar campos de texto libre (TEXT, TEXTAREA) - no SELECT, BOOLEAN, DATE, etc.
+  const fieldIds = Object.keys(data.fields)
+  const fieldDefs = fieldIds.length > 0
+    ? await prisma.fieldDefinition.findMany({ where: { id: { in: fieldIds } }, select: { id: true, type: true } })
+    : []
+  const fieldTypeMap = Object.fromEntries(fieldDefs.map(f => [f.id, f.type]))
+
   for (const [fieldId, value] of Object.entries(data.fields)) {
-    const valRes = validateDynamicFieldValue(value)
-    if (!valRes.valid) {
-      return { success: false, error: `Error de formato en un campo: ${valRes.error}` }
+    const fieldType = fieldTypeMap[fieldId]
+    if (fieldType === 'TEXT' || fieldType === 'TEXTAREA') {
+      const valRes = validateDynamicFieldValue(value)
+      if (!valRes.valid) {
+        return { success: false, error: `Error de formato en un campo: ${valRes.error}` }
+      }
     }
   }
 
@@ -211,11 +220,20 @@ export async function updatePiece(id: string, data: {
   const hasPerm = await checkUserPermission(session.user.id, data.categoryId, 'edit')
   if (!hasPerm) return { success: false, error: "No tienes permisos para editar piezas en esta rama del acervo." }
 
-  // Validar campos dinámicos
+  // Solo validar campos de texto libre (TEXT, TEXTAREA) - no SELECT, BOOLEAN, DATE, etc.
+  const fieldIds2 = Object.keys(data.fields)
+  const fieldDefs2 = fieldIds2.length > 0
+    ? await prisma.fieldDefinition.findMany({ where: { id: { in: fieldIds2 } }, select: { id: true, type: true } })
+    : []
+  const fieldTypeMap2 = Object.fromEntries(fieldDefs2.map(f => [f.id, f.type]))
+
   for (const [fieldId, value] of Object.entries(data.fields)) {
-    const valRes = validateDynamicFieldValue(value)
-    if (!valRes.valid) {
-      return { success: false, error: `Error de formato en un campo: ${valRes.error}` }
+    const fieldType = fieldTypeMap2[fieldId]
+    if (fieldType === 'TEXT' || fieldType === 'TEXTAREA') {
+      const valRes = validateDynamicFieldValue(value)
+      if (!valRes.valid) {
+        return { success: false, error: `Error de formato en un campo: ${valRes.error}` }
+      }
     }
   }
 
