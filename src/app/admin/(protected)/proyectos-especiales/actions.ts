@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { auth } from "@/auth"
+import { toSentenceCase } from "@/lib/utils"
 
 async function requireCollaborator() {
   const session = await auth()
@@ -82,18 +83,18 @@ export async function createSpecialProject(data: {
   try {
     await prisma.specialProject.create({
       data: {
-        name: data.name,
-        theme: data.theme || null,
-        description: data.description || null,
+        name: toSentenceCase(data.name) || data.name,
+        theme: toSentenceCase(data.theme) || null,
+        description: toSentenceCase(data.description) || null,
         content: data.content || null,
-        objective: data.objective || null,
+        objective: toSentenceCase(data.objective) || null,
         coverImage: data.coverImage || null,
         isPublished: data.isPublished || false,
         createdBy: member.id,
         images: {
           create: data.images.map(img => ({
             url: img.url,
-            caption: img.caption || null,
+            caption: toSentenceCase(img.caption) || null,
             order: img.order
           }))
         }
@@ -128,17 +129,17 @@ export async function updateSpecialProject(id: string, data: {
     await prisma.specialProject.update({
       where: { id },
       data: {
-        name: data.name,
-        theme: data.theme || null,
-        description: data.description || null,
+        name: toSentenceCase(data.name) || data.name,
+        theme: toSentenceCase(data.theme) || null,
+        description: toSentenceCase(data.description) || null,
         content: data.content || null,
-        objective: data.objective || null,
+        objective: toSentenceCase(data.objective) || null,
         coverImage: data.coverImage || null,
         isPublished: data.isPublished,
         images: {
           create: data.images.map(img => ({
             url: img.url,
-            caption: img.caption || null,
+            caption: toSentenceCase(img.caption) || null,
             order: img.order
           }))
         }

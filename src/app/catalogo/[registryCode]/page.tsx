@@ -4,6 +4,29 @@ import { notFound } from "next/navigation"
 import { ArrowLeft, Compass, Calendar, Tag, Info } from "lucide-react"
 import Footer from "@/components/public/Footer"
 
+/** Convierte el valor almacenado al texto visible según el tipo de campo */
+function formatFieldValue(fv: any): string {
+  const type: string = (fv.field?.type || 'text').toLowerCase()
+  const raw: string = fv.value || ''
+  if (!raw) return '—'
+
+  // Booleano
+  if (type === 'boolean') {
+    const lower = raw.toLowerCase()
+    if (lower === 'true' || lower === 'si' || lower === 'sí' || lower === '1') return 'Sí'
+    if (lower === 'false' || lower === 'no' || lower === '0') return 'No'
+    return raw
+  }
+
+  // Select — busca el label entre las opciones del campo
+  if (type === 'select' && fv.field?.options?.length > 0) {
+    const found = fv.field.options.find((o: any) => o.value === raw || o.label === raw)
+    return found ? found.label : raw
+  }
+
+  return raw
+}
+
 export default async function PieceDetailPage({ params }: { params: Promise<{ registryCode: string }> }) {
   const resolvedParams = await params
   
@@ -15,7 +38,10 @@ export default async function PieceDetailPage({ params }: { params: Promise<{ re
       fieldValues: {
         include: {
           field: {
-            include: { section: true }
+            include: {
+              section: true,
+              options: { orderBy: { order: 'asc' } }  // para resolver selects
+            }
           }
         }
       }
@@ -106,23 +132,26 @@ export default async function PieceDetailPage({ params }: { params: Promise<{ re
               </div>
 
               {Object.entries(
-                piece.fieldValues.reduce((acc, fv: any) => {
-                  const sectionName = fv.field.section?.name || (fv.field.isGeneral ? "Datos Generales" : "Datos Específicos");
-                  if (!acc[sectionName]) acc[sectionName] = [];
-                  acc[sectionName].push(fv);
-                  return acc;
-                }, {} as Record<string, any[]>)
+                piece.fieldValues
+                  .filter((fv: any) => fv.value && fv.value.trim() !== '' && fv.field?.name)
+                  .reduce((acc: Record<string, any[]>, fv: any) => {
+                    const sectionName = fv.field.section?.name || (fv.field.isGeneral ? 'Datos generales' : 'Datos específicos')
+                    if (!acc[sectionName]) acc[sectionName] = []
+                    acc[sectionName].push(fv)
+                    return acc
+                  }, {})
               ).map(([sectionName, values]) => (
                 <div key={sectionName} className="mb-6">
-                  <h4 className="text-sm font-bold text-[#374151] uppercase tracking-wider mb-3">{sectionName}</h4>
-                  <div className="grid grid-cols-1 gap-y-4">
-                    {values.map(fv => (
+                  {/* Encabezado de sección */}
+                  <h4 className="text-sm font-bold text-[#374151] uppercase tracking-wider mb-3 pb-1 border-b border-[#d5cdbc]">{sectionName}</h4>
+                  <div className="grid grid-cols-1 gap-y-3">
+                    {(values as any[]).map(fv => (
                       <div key={fv.id} className="bg-[#f5f2eb] p-4 rounded-lg">
                         <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
                           {fv.field.name}
                         </span>
                         <span className="text-gray-900 break-words whitespace-pre-wrap">
-                          {fv.value}
+                          {formatFieldValue(fv)}
                         </span>
                       </div>
                     ))}

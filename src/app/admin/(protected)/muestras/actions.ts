@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { auth } from "@/auth"
+import { toSentenceCase } from "@/lib/utils"
 
 async function requireCollaborator() {
   const session = await auth()
@@ -63,9 +64,9 @@ export async function createExhibition(data: {
   try {
     await prisma.exhibition.create({
       data: {
-        name: data.name,
-        theme: data.theme || null,
-        location: data.location || null,
+        name: toSentenceCase(data.name) || data.name,
+        theme: toSentenceCase(data.theme) || null,
+        location: toSentenceCase(data.location) || null,
         startDate: data.startDate || null,
         endDate: data.endDate || null,
         createdBy: member.id,
@@ -106,9 +107,9 @@ export async function updateExhibition(id: string, data: {
     await prisma.exhibition.update({
       where: { id },
       data: {
-        name: data.name,
-        theme: data.theme || null,
-        location: data.location || null,
+        name: toSentenceCase(data.name) || data.name,
+        theme: toSentenceCase(data.theme) || null,
+        location: toSentenceCase(data.location) || null,
         startDate: data.startDate || null,
         endDate: data.endDate || null,
         images: {

@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { auth } from "@/auth"
+import { toSentenceCase } from "@/lib/utils"
 
 // Type for the flat category returned from DB
 export type CategoryWithPieceCount = {
@@ -104,10 +105,10 @@ export async function createCategory(data: { name: string; slug: string; prefix:
 
     await prisma.category.create({
       data: {
-        name: data.name,
+        name: toSentenceCase(data.name) || data.name,
         slug: data.slug,
         prefix: data.prefix,
-        description: data.description || null,
+        description: toSentenceCase(data.description) || null,
         parentId: data.parentId || null,
         imageUrl: data.imageUrl || null,
         leaderId: data.leaderId || null,
@@ -155,10 +156,10 @@ export async function updateCategory(id: string, data: { name: string; slug: str
     await prisma.category.update({
       where: { id },
       data: {
-        name: data.name,
+        name: toSentenceCase(data.name) || data.name,
         slug: data.slug,
         prefix: data.prefix,
-        description: data.description || null,
+        description: toSentenceCase(data.description) || null,
         parentId: data.parentId || null,
         imageUrl: data.imageUrl || null,
         leaderId: data.leaderId || null,

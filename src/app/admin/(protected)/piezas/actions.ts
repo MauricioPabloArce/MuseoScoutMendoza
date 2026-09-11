@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { auth } from "@/auth"
+import { toSentenceCase } from "@/lib/utils"
 
 export async function getPieces() {
   return await prisma.museumPiece.findMany({
@@ -157,7 +158,7 @@ export async function createPiece(data: {
         fieldValues: {
           create: Object.entries(data.fields).map(([fieldId, value]) => ({
             fieldId,
-            value
+            value: toSentenceCase(value) || value
           }))
         },
         media: data.mediaUrls && data.mediaUrls.length > 0 ? {
@@ -216,7 +217,7 @@ export async function updatePiece(id: string, data: {
         fieldValues: {
           create: Object.entries(data.fields).map(([fieldId, value]) => ({
             fieldId,
-            value
+            value: toSentenceCase(value) || value
           }))
         },
         // For media, we append for now. A full sync requires more logic

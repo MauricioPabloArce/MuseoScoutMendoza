@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { auth } from "@/auth"
+import { toSentenceCase } from "@/lib/utils"
 
 // Secciones protegidas: solo administradores pueden modificarlas
 const PROTECTED_SECTIONS = ['datos pieza', 'donante']
@@ -77,8 +78,8 @@ export async function createSection(data: { name: string; description?: string }
   try {
     const section = await prisma.fieldSection.create({
       data: {
-        name: data.name,
-        description: data.description,
+        name: toSentenceCase(data.name) || data.name,
+        description: toSentenceCase(data.description),
         createdBy: userId  // guardar el creador
       }
     })
@@ -104,7 +105,7 @@ export async function createField(data: {
   try {
     const field = await prisma.fieldDefinition.create({
       data: {
-        name: data.name,
+        name: toSentenceCase(data.name) || data.name,
         internalKey: data.internalKey,
         type: data.type,
         isGeneral: data.isGeneral ?? false,
@@ -157,8 +158,8 @@ export async function updateSection(id: string, data: { name: string; descriptio
     const section = await prisma.fieldSection.update({
       where: { id },
       data: {
-        name: data.name,
-        description: data.description
+        name: toSentenceCase(data.name) || data.name,
+        description: toSentenceCase(data.description)
       }
     })
     revalidatePath("/admin/campos")
@@ -195,7 +196,7 @@ export async function updateField(id: string, data: {
     const field = await prisma.fieldDefinition.update({
       where: { id },
       data: {
-        name: data.name,
+        name: toSentenceCase(data.name) || data.name,
         internalKey: data.internalKey,
         type: data.type,
         isGeneral: data.isGeneral ?? false,
