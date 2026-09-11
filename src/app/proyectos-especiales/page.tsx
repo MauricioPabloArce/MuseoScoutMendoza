@@ -5,6 +5,7 @@ import { Target } from "lucide-react"
 
 export default async function ProyectosEspecialesPublicPage() {
   const projects = await prisma.specialProject.findMany({
+    where: { isPublished: true },
     include: { images: true },
     orderBy: { createdAt: 'desc' }
   })

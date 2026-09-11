@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { createSpecialProject, updateSpecialProject, deleteSpecialProject, uploadProjectImage } from "@/app/admin/(protected)/proyectos-especiales/actions"
-import { Plus, Edit2, Trash2, X, Image as ImageIcon, Sparkles } from "lucide-react"
+import { Plus, Edit2, Trash2, X, Image as ImageIcon, Sparkles, Eye, Target } from "lucide-react"
 import toast from "react-hot-toast"
 
 type SpecialProject = any
@@ -18,7 +18,11 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
   const [theme, setTheme] = useState("")
   const [description, setDescription] = useState("")
   const [objective, setObjective] = useState("")
+  const [isPublished, setIsPublished] = useState(false)
   const [images, setImages] = useState<{ url: string; caption: string; order: number }[]>([])
+  
+  // Preview State
+  const [previewProject, setPreviewProject] = useState<SpecialProject | null>(null)
 
   const handleEdit = (proj: SpecialProject) => {
     setCurrent(proj)
@@ -26,6 +30,7 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
     setTheme(proj.theme || "")
     setDescription(proj.description || "")
     setObjective(proj.objective || "")
+    setIsPublished(proj.isPublished || false)
     setImages(proj.images?.map((img: any) => ({ ...img, caption: img.caption || "" })) || [])
     setIsEditing(true)
   }
@@ -36,6 +41,7 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
     setTheme("")
     setDescription("")
     setObjective("")
+    setIsPublished(false)
     setImages([])
     setIsEditing(true)
   }
@@ -44,6 +50,11 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
     const file = e.target.files?.[0]
     if (!file) return
     
+    if (images.length >= 15) {
+      toast.error("Máximo 15 imágenes permitidas")
+      return
+    }
+
     if (file.size > 5 * 1024 * 1024) {
       toast.error("El archivo excede el tamaño máximo de 5MB")
       return
@@ -93,6 +104,7 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
       theme,
       description,
       objective,
+      isPublished,
       images: validImages
     }
 
@@ -154,11 +166,24 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
               <label className="block text-sm font-medium text-gray-700 mb-1">Objetivo</label>
               <textarea value={objective} onChange={e => setObjective(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#31573c] focus:outline-none min-h-[80px]" placeholder="¿Qué se busca lograr con esto?" />
             </div>
+            <div className="md:col-span-2 flex items-center gap-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <input 
+                type="checkbox" 
+                id="isPublished" 
+                checked={isPublished} 
+                onChange={e => setIsPublished(e.target.checked)}
+                className="w-5 h-5 text-[#31573c] rounded focus:ring-[#31573c]"
+              />
+              <label htmlFor="isPublished" className="font-medium text-gray-800 cursor-pointer select-none flex-1">
+                Publicar Proyecto
+                <p className="text-sm text-gray-500 font-normal mt-0.5">Si está desmarcado, se guardará como borrador y no será visible al público.</p>
+              </label>
+            </div>
           </div>
 
           <div className="border-t pt-6">
             <div className="flex justify-between items-center mb-4">
-              <label className="block text-sm font-medium text-gray-700">Imágenes (Cantidad Dinámica, max 5MB)</label>
+              <label className="block text-sm font-medium text-gray-700">Imágenes (Máximo 15, max 5MB)</label>
               <div>
                 <input 
                   type="file" 
@@ -175,7 +200,7 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
             
             {images.length === 0 ? (
               <div className="text-center py-8 bg-gray-50 border-2 border-dashed border-gray-200 rounded text-gray-500 text-sm">
-                No hay imágenes configuradas. Puedes subir tantas como desees.
+                No hay imágenes configuradas. Puedes subir hasta 15 imágenes.
               </div>
             ) : (
               <div className="space-y-4">
@@ -220,7 +245,14 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
         {projects.map((proj) => (
-          <div key={proj.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
+          <div key={proj.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col relative">
+            <div className="absolute top-2 left-2 z-10">
+              {proj.isPublished ? (
+                <span className="bg-green-500 text-white text-xs px-2 py-1 rounded font-medium shadow-sm">Publicado</span>
+              ) : (
+                <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded font-medium shadow-sm">Borrador</span>
+              )}
+            </div>
             {proj.images && proj.images.length > 0 ? (
               <div className="h-56 overflow-hidden bg-gray-100 relative">
                 <img src={proj.images[0].url} alt={proj.name} className="w-full h-full object-cover" />
@@ -233,7 +265,7 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
                 </div>
               </div>
             ) : (
-              <div className="h-56 bg-gradient-to-br from-[#31573c] to-[#1f3a27] p-6 flex flex-col justify-end text-white">
+              <div className="h-56 bg-gradient-to-br from-[#31573c] to-[#1f3a27] p-6 flex flex-col justify-end text-white relative">
                 <h3 className="text-xl font-bold mb-1">{proj.name}</h3>
                 <p className="text-sm text-gray-300">{proj.theme || "Sin temática"}</p>
               </div>
@@ -244,6 +276,9 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
               <div className="mt-auto pt-4 border-t flex justify-between items-center">
                 <span className="text-xs text-gray-400">Creado {new Date(proj.createdAt).toLocaleDateString()}</span>
                 <div className="flex gap-2">
+                  <button onClick={() => setPreviewProject(proj)} className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Vista Previa">
+                    <Eye size={18} />
+                  </button>
                   <button onClick={() => handleEdit(proj)} className="p-2 text-gray-600 hover:text-[#31573c] hover:bg-[#e4decb]/30 rounded transition-colors" title="Editar">
                     <Edit2 size={18} />
                   </button>
@@ -263,6 +298,106 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
           </div>
         )}
       </div>
+
+      {previewProject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 sm:p-6 overflow-y-auto">
+          <div className="relative w-full max-w-5xl bg-[#fdfdfd] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-full">
+            
+            {/* Modal Header */}
+            <div className="flex justify-between items-center p-4 border-b bg-white shrink-0 sticky top-0 z-20">
+              <div className="flex items-center gap-3">
+                <span className="bg-[#31573c] text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 uppercase tracking-wider">
+                  <Eye size={14} /> Vista Previa Pública
+                </span>
+                <span className="text-sm text-gray-500 hidden sm:inline-block">
+                  Así es como se ve este proyecto en la página de Proyectos Especiales.
+                </span>
+              </div>
+              <button onClick={() => setPreviewProject(null)} className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-full transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Content - Reusing the public page design for the article block */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#fdfcf8]">
+              <article className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#e4decb]/50 max-w-4xl mx-auto">
+                <div className="p-8 md:p-12">
+                  {/* Etiqueta / Temática */}
+                  {previewProject.theme && (
+                    <div className="inline-block bg-[#e4decb]/30 text-[#31573c] px-4 py-1.5 rounded-full text-sm font-semibold tracking-wide mb-6">
+                      {previewProject.theme}
+                    </div>
+                  )}
+
+                  {/* Título Principal */}
+                  <h2 className="text-3xl md:text-5xl font-bold text-[#31573c] mb-6 font-serif">
+                    {previewProject.name}
+                  </h2>
+
+                  {/* Descripción */}
+                  {previewProject.description && (
+                    <div className="text-lg md:text-xl text-gray-700 leading-relaxed mb-10 max-w-3xl font-light">
+                      {previewProject.description.split('\n').map((paragraph: string, idx: number) => (
+                        <p key={idx} className="mb-4">{paragraph}</p>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Objetivo (Destacado) */}
+                  {previewProject.objective && (
+                    <div className="bg-[#f8f9f6] border-l-4 border-[#31573c] p-6 md:p-8 rounded-r-2xl mb-12 relative overflow-hidden">
+                      <Target className="absolute -bottom-6 -right-6 text-[#e4decb] opacity-40 w-32 h-32" />
+                      <div className="relative z-10">
+                        <h3 className="text-lg font-bold text-[#31573c] mb-3 flex items-center gap-2">
+                          <Target size={20} />
+                          El Objetivo
+                        </h3>
+                        <p className="text-gray-700 italic leading-relaxed text-lg">
+                          "{previewProject.objective}"
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Galería Fotográfica */}
+                {previewProject.images && previewProject.images.length > 0 && (
+                  <div className="px-8 md:px-12 pb-12">
+                    <div className="flex items-center gap-3 mb-6">
+                      <Sparkles className="text-[#c1743a]" size={24} />
+                      <h3 className="text-2xl font-bold text-[#31573c] font-serif">Galería del Proyecto</h3>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {previewProject.images.map((img: any, idx: number) => (
+                        <div key={idx} className={`group relative rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 ${
+                          idx === 0 && previewProject.images.length % 2 !== 0 ? 'md:col-span-2 md:aspect-[21/9]' : 'aspect-[4/3]'
+                        }`}>
+                          <img 
+                            src={img.url} 
+                            alt={img.caption || `Imagen ${idx + 1}`} 
+                            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out"
+                          />
+                          {/* Gradiente sutil inferior */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          
+                          {/* Caption */}
+                          {img.caption && (
+                            <div className="absolute bottom-0 left-0 right-0 p-6 translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                              <p className="text-white font-medium text-lg drop-shadow-md">{img.caption}</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </article>
+            </div>
+            
+          </div>
+        </div>
+      )}
     </div>
   )
 }
