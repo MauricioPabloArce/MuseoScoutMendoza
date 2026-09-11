@@ -57,6 +57,7 @@ export default async function ProyectosEspecialesPublicPage() {
                         </div>
                       </div>
                     )}
+                  </div>
                     
                     {proj.content ? (
                       <div className="mt-12 space-y-12">
