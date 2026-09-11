@@ -52,11 +52,16 @@ export default async function PieceDetailPage({ params }: { params: Promise<{ re
     notFound()
   }
 
-  const titleField = piece.fieldValues.find((fv: any) => fv.field?.internalKey === 'titulo');
-  const title = titleField?.value || 'Sin Título';
+  // Prioridad: campo 'nombre' > campo 'titulo' > primer campo con valor
+  const titleField = 
+    piece.fieldValues.find((fv: any) => fv.field?.internalKey === 'nombre') ||
+    piece.fieldValues.find((fv: any) => fv.field?.internalKey === 'nombre_pieza') ||
+    piece.fieldValues.find((fv: any) => fv.field?.internalKey === 'titulo') ||
+    piece.fieldValues.find((fv: any) => fv.value && fv.value.trim() !== '')
+  const title = titleField?.value || piece.registryCode || 'Sin título'
 
-  const imageField = piece.fieldValues.find((fv: any) => fv.field?.internalKey === 'imagen_principal');
-  const mainImageUrl = imageField?.value || null;
+  const imageField = piece.fieldValues.find((fv: any) => fv.field?.internalKey === 'imagen_principal')
+  const mainImageUrl = imageField?.value || null
 
   return (
     <div className="min-h-screen bg-[#eae6df] font-sans pb-20">
