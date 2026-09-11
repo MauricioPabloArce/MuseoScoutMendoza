@@ -78,8 +78,8 @@ export async function createSection(data: { name: string; description?: string }
   try {
     const section = await prisma.fieldSection.create({
       data: {
-        name: toSentenceCase(data.name) || data.name,
-        description: toSentenceCase(data.description),
+        name: data.name,
+        description: data.description,
         createdBy: userId  // guardar el creador
       }
     })
@@ -105,7 +105,7 @@ export async function createField(data: {
   try {
     const field = await prisma.fieldDefinition.create({
       data: {
-        name: toSentenceCase(data.name) || data.name,
+        name: data.name,
         internalKey: data.internalKey,
         type: data.type,
         isGeneral: data.isGeneral ?? false,
@@ -158,8 +158,8 @@ export async function updateSection(id: string, data: { name: string; descriptio
     const section = await prisma.fieldSection.update({
       where: { id },
       data: {
-        name: toSentenceCase(data.name) || data.name,
-        description: toSentenceCase(data.description)
+        name: data.name,
+        description: data.description
       }
     })
     revalidatePath("/admin/campos")
@@ -196,7 +196,7 @@ export async function updateField(id: string, data: {
     const field = await prisma.fieldDefinition.update({
       where: { id },
       data: {
-        name: toSentenceCase(data.name) || data.name,
+        name: data.name,
         internalKey: data.internalKey,
         type: data.type,
         isGeneral: data.isGeneral ?? false,
