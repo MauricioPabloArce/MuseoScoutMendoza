@@ -19,7 +19,8 @@ export default async function Header() {
       </div>
       <nav className="hidden lg:flex gap-6 text-sm font-medium items-center">
         <Link href="/" className="hover:text-white transition-colors">Inicio</Link>
-        <Link href="/acervo" className="hover:text-white transition-colors">Acervo</Link>
+        <Link href="/catalogo" className="hover:text-white transition-colors">Acervo</Link>
+        <Link href="/muestras" className="hover:text-white transition-colors">Muestras</Link>
         <Link href="/proyectos-especiales" className="hover:text-white transition-colors">Proyectos Especiales</Link>
         
         {/* Dropdown for Sobre el Museo */}
