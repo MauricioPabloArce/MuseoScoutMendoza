@@ -10,9 +10,10 @@ function isImage(url: string) {
   return /\.(jpg|jpeg|png|webp|avif|gif|svg)$/.test(url.toLowerCase())
 }
 
-export default async function ProyectoEspecialDetail({ params }: { params: { id: string } }) {
+export default async function ProyectoEspecialDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const proj = await prisma.specialProject.findUnique({
-    where: { id: params.id, isPublished: true },
+    where: { id, isPublished: true },
     include: { 
       images: true,
       creator: {
