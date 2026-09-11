@@ -9,7 +9,7 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user
       const isOnAdmin = nextUrl.pathname.startsWith('/admin')
       const isLoginPath = nextUrl.pathname === '/admin/login'
-      const isOnProtectedPublic = nextUrl.pathname.startsWith('/catalogo') || nextUrl.pathname.startsWith('/proyectos')
+      const isOnProtectedPublic = nextUrl.pathname.startsWith('/catalogo') || nextUrl.pathname.startsWith('/acervo') || nextUrl.pathname.startsWith('/proyectos')
       const isPublicLoginPath = nextUrl.pathname === '/ingresar'
       
       if (isOnAdmin) {
