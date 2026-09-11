@@ -64,9 +64,9 @@ export async function createExhibition(data: {
   try {
     await prisma.exhibition.create({
       data: {
-        name: toSentenceCase(data.name) || data.name,
-        theme: toSentenceCase(data.theme) || null,
-        location: toSentenceCase(data.location) || null,
+        name: data.name,
+        theme: data.theme || null,
+        location: data.location || null,
         startDate: data.startDate || null,
         endDate: data.endDate || null,
         createdBy: member.id,
@@ -107,9 +107,9 @@ export async function updateExhibition(id: string, data: {
     await prisma.exhibition.update({
       where: { id },
       data: {
-        name: toSentenceCase(data.name) || data.name,
-        theme: toSentenceCase(data.theme) || null,
-        location: toSentenceCase(data.location) || null,
+        name: data.name,
+        theme: data.theme || null,
+        location: data.location || null,
         startDate: data.startDate || null,
         endDate: data.endDate || null,
         images: {

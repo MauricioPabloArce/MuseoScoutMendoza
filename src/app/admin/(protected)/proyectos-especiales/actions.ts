@@ -83,18 +83,18 @@ export async function createSpecialProject(data: {
   try {
     await prisma.specialProject.create({
       data: {
-        name: toSentenceCase(data.name) || data.name,
-        theme: toSentenceCase(data.theme) || null,
-        description: toSentenceCase(data.description) || null,
+        name: data.name,
+        theme: data.theme || null,
+        description: data.description || null,
         content: data.content || null,
-        objective: toSentenceCase(data.objective) || null,
+        objective: data.objective || null,
         coverImage: data.coverImage || null,
         isPublished: data.isPublished || false,
         createdBy: member.id,
         images: {
           create: data.images.map(img => ({
             url: img.url,
-            caption: toSentenceCase(img.caption) || null,
+            caption: img.caption || null,
             order: img.order
           }))
         }
@@ -129,17 +129,17 @@ export async function updateSpecialProject(id: string, data: {
     await prisma.specialProject.update({
       where: { id },
       data: {
-        name: toSentenceCase(data.name) || data.name,
-        theme: toSentenceCase(data.theme) || null,
-        description: toSentenceCase(data.description) || null,
+        name: data.name,
+        theme: data.theme || null,
+        description: data.description || null,
         content: data.content || null,
-        objective: toSentenceCase(data.objective) || null,
+        objective: data.objective || null,
         coverImage: data.coverImage || null,
         isPublished: data.isPublished,
         images: {
           create: data.images.map(img => ({
             url: img.url,
-            caption: toSentenceCase(img.caption) || null,
+            caption: img.caption || null,
             order: img.order
           }))
         }
