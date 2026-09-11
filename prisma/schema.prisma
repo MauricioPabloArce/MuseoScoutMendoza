@@ -119,6 +119,7 @@ model FieldSection {
   name        String   @unique
   description String?
   order       Int      @default(0)
+  createdBy   String?  // userId of creator (null = system/admin section)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

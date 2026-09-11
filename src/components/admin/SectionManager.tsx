@@ -1,13 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { Layers, Plus, Edit, Trash2, ChevronDown, ChevronRight, ChevronUp, Settings } from "lucide-react"
+import { Layers, Plus, Edit, Trash2, ChevronDown, ChevronRight, ChevronUp, Settings, ShieldX, Lock } from "lucide-react"
 import SectionBuilder from "./SectionBuilder"
 import FieldBuilder from "./FieldBuilder"
 import { deleteSection, deleteField, updateFieldOrder } from "@/app/admin/(protected)/campos/actions"
 import toast from "react-hot-toast"
 
-export default function SectionManager({ sections }: { sections: any[] }) {
+const PROTECTED_SECTIONS = ['datos pieza', 'donante']
+
+export default function SectionManager({ sections, userId = '', userRole = 'VIEWER' }: { sections: any[], userId?: string, userRole?: string }) {
   const [expandedSectionId, setExpandedSectionId] = useState<string | null>(null)
   const [editingSection, setEditingSection] = useState<any | null>(null)
   const [editingField, setEditingField] = useState<any | null>(null)
@@ -18,6 +20,28 @@ export default function SectionManager({ sections }: { sections: any[] }) {
   const [sectionToDelete, setSectionToDelete] = useState<{id: string, name: string} | null>(null)
   const [fieldToDelete, setFieldToDelete] = useState<{id: string, name: string} | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [noPermissionModal, setNoPermissionModal] = useState<string | null>(null) // message string
+
+  const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN'
+
+  /** Determina si el usuario actual puede editar una sección */
+  const canEditSection = (section: any): boolean => {
+    if (isAdmin) return true
+    // Secciones protegidas del sistema
+    if (!section.createdBy || PROTECTED_SECTIONS.includes(section.name?.toLowerCase().trim())) return false
+    // Solo el creador puede editar
+    return section.createdBy === userId
+  }
+
+  const getNoPermReason = (section: any): string => {
+    if (PROTECTED_SECTIONS.includes(section.name?.toLowerCase().trim())) {
+      return `La sección "${section.name}" solo puede ser modificada por administradores del sistema.`
+    }
+    if (!section.createdBy || section.createdBy !== userId) {
+      return `La sección "${section.name}" fue creada por otro usuario. Solo su creador o un administrador puede modificarla.`
+    }
+    return "No tenés permisos para modificar esta sección."
+  }
 
   const toggleSection = (id: string) => {
     if (expandedSectionId === id) setExpandedSectionId(null)
@@ -85,6 +109,7 @@ export default function SectionManager({ sections }: { sections: any[] }) {
           </h2>
           <p className="text-sm text-gray-500">Administra las secciones y los campos que contienen.</p>
         </div>
+        {/* Cualquier colaborador o admin puede crear secciones */}
         <button 
           onClick={() => {
             setIsCreatingSection(true)
@@ -110,7 +135,10 @@ export default function SectionManager({ sections }: { sections: any[] }) {
       <div className="space-y-4">
         {sections.map(section => {
           const isExpanded = expandedSectionId === section.id
-          
+          const canEdit = canEditSection(section)
+          const isProtected = PROTECTED_SECTIONS.includes(section.name?.toLowerCase().trim())
+          const isOtherOwner = !isAdmin && section.createdBy && section.createdBy !== userId
+
           return (
             <div key={section.id} className="border border-gray-200 rounded-lg bg-white overflow-hidden shadow-sm">
               <div 
@@ -124,8 +152,20 @@ export default function SectionManager({ sections }: { sections: any[] }) {
                   <div>
                     <h3 className="font-semibold text-gray-800 flex items-center gap-2">
                       {section.name}
-                      {section.name.toLowerCase().includes('datos pieza') && (
-                         <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded uppercase">Por defecto</span>
+                      {isProtected && (
+                        <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase flex items-center gap-1">
+                          <Lock size={10} /> Solo Admin
+                        </span>
+                      )}
+                      {isOtherOwner && (
+                        <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded uppercase">
+                          Solo creador
+                        </span>
+                      )}
+                      {!isProtected && !isOtherOwner && section.createdBy === userId && !isAdmin && (
+                        <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded uppercase">
+                          Tu sección
+                        </span>
                       )}
                     </h3>
                     {section.description && <p className="text-sm text-gray-500 mt-0.5">{section.description}</p>}
@@ -137,29 +177,43 @@ export default function SectionManager({ sections }: { sections: any[] }) {
                     {section.fields?.length || 0} campos
                   </span>
                   
-                  <button 
-                    onClick={() => {
-                      setEditingSection(section)
-                      setIsCreatingSection(false)
-                      setIsCreatingFieldForSectionId(null)
-                      setEditingField(null)
-                      // scroll to top logic if needed
-                    }}
-                    className="p-1.5 text-gray-400 hover:text-blue-600 rounded transition-colors"
-                    title="Editar Sección"
-                  >
-                    <Edit size={18} />
-                  </button>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setSectionToDelete({ id: section.id, name: section.name })
-                    }}
-                    className="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors"
-                    title="Eliminar Sección"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  {canEdit ? (
+                    <>
+                      <button 
+                        onClick={() => {
+                          setEditingSection(section)
+                          setIsCreatingSection(false)
+                          setIsCreatingFieldForSectionId(null)
+                          setEditingField(null)
+                        }}
+                        className="p-1.5 text-gray-400 hover:text-blue-600 rounded transition-colors"
+                        title="Editar Sección"
+                      >
+                        <Edit size={18} />
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSectionToDelete({ id: section.id, name: section.name })
+                        }}
+                        className="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors"
+                        title="Eliminar Sección"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setNoPermissionModal(getNoPermReason(section))
+                      }}
+                      className="p-1.5 text-gray-300 hover:text-gray-400 rounded transition-colors"
+                      title="Sin permisos"
+                    >
+                      <Lock size={18} />
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -167,17 +221,26 @@ export default function SectionManager({ sections }: { sections: any[] }) {
                 <div className="p-4 bg-gray-50/50">
                   <div className="flex justify-between items-center mb-4">
                     <h4 className="text-sm font-medium text-gray-700">Campos en esta sección:</h4>
-                    <button 
-                      onClick={() => {
-                        setIsCreatingFieldForSectionId(section.id)
-                        setEditingField(null)
-                        setIsCreatingSection(false)
-                        setEditingSection(null)
-                      }}
-                      className="text-sm bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded flex items-center gap-1 transition-colors shadow-sm"
-                    >
-                      <Plus size={16} /> Añadir Campo
-                    </button>
+                    {canEdit ? (
+                      <button 
+                        onClick={() => {
+                          setIsCreatingFieldForSectionId(section.id)
+                          setEditingField(null)
+                          setIsCreatingSection(false)
+                          setEditingSection(null)
+                        }}
+                        className="text-sm bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded flex items-center gap-1 transition-colors shadow-sm"
+                      >
+                        <Plus size={16} /> Añadir Campo
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setNoPermissionModal(getNoPermReason(section))}
+                        className="text-sm bg-gray-100 border border-gray-200 text-gray-400 px-3 py-1.5 rounded flex items-center gap-1 cursor-pointer"
+                      >
+                        <Lock size={14} /> Añadir Campo
+                      </button>
+                    )}
                   </div>
 
                   {(isCreatingFieldForSectionId === section.id || (editingField && editingField.sectionId === section.id)) && (
@@ -189,7 +252,7 @@ export default function SectionManager({ sections }: { sections: any[] }) {
                         </h5>
                       </div>
                       <FieldBuilder 
-                        sections={sections} // Still needed for the internal select, though we could fix it to the current section
+                        sections={sections}
                         initialData={editingField ? { ...editingField, sectionId: section.id } : { sectionId: section.id }} 
                         onCancel={() => {
                           setIsCreatingFieldForSectionId(null)
@@ -216,40 +279,48 @@ export default function SectionManager({ sections }: { sections: any[] }) {
                             <td className="px-4 py-3 text-gray-500 font-mono text-xs">{field.internalKey}</td>
                             <td className="px-4 py-3">{field.type}</td>
                             <td className="px-4 py-3 text-right whitespace-nowrap">
-                              <button 
-                                onClick={() => handleMoveField(section.id, field.id, 'up')}
-                                disabled={index === 0}
-                                className="inline-block p-1 text-gray-400 hover:text-[#31573c] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                                title="Subir orden"
-                              >
-                                <ChevronUp size={16} />
-                              </button>
-                              <button 
-                                onClick={() => handleMoveField(section.id, field.id, 'down')}
-                                disabled={index === section.fields.length - 1}
-                                className="inline-block p-1 text-gray-400 hover:text-[#31573c] disabled:opacity-30 disabled:cursor-not-allowed mr-2 transition-colors"
-                                title="Bajar orden"
-                              >
-                                <ChevronDown size={16} />
-                              </button>
-                              <button 
-                                onClick={() => {
-                                  setEditingField(field)
-                                  setIsCreatingFieldForSectionId(null)
-                                  setIsCreatingSection(false)
-                                  setEditingSection(null)
-                                }}
-                                className="inline-block p-1 text-gray-400 hover:text-blue-600 mr-2 transition-colors"
-                                title="Editar"
-                              >
-                                <Edit size={16} />
-                              </button>
-                              <button 
-                                onClick={() => setFieldToDelete({ id: field.id, name: field.name })}
-                                className="inline-block p-1 text-gray-400 hover:text-red-600 transition-colors"
-                              >
-                                <Trash2 size={16} />
-                              </button>
+                              {canEdit ? (
+                                <>
+                                  <button 
+                                    onClick={() => handleMoveField(section.id, field.id, 'up')}
+                                    disabled={index === 0}
+                                    className="inline-block p-1 text-gray-400 hover:text-[#31573c] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    title="Subir orden"
+                                  >
+                                    <ChevronUp size={16} />
+                                  </button>
+                                  <button 
+                                    onClick={() => handleMoveField(section.id, field.id, 'down')}
+                                    disabled={index === section.fields.length - 1}
+                                    className="inline-block p-1 text-gray-400 hover:text-[#31573c] disabled:opacity-30 disabled:cursor-not-allowed mr-2 transition-colors"
+                                    title="Bajar orden"
+                                  >
+                                    <ChevronDown size={16} />
+                                  </button>
+                                  <button 
+                                    onClick={() => {
+                                      setEditingField(field)
+                                      setIsCreatingFieldForSectionId(null)
+                                      setIsCreatingSection(false)
+                                      setEditingSection(null)
+                                    }}
+                                    className="inline-block p-1 text-gray-400 hover:text-blue-600 mr-2 transition-colors"
+                                    title="Editar"
+                                  >
+                                    <Edit size={16} />
+                                  </button>
+                                  <button 
+                                    onClick={() => setFieldToDelete({ id: field.id, name: field.name })}
+                                    className="inline-block p-1 text-gray-400 hover:text-red-600 transition-colors"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </>
+                              ) : (
+                                <span className="text-xs text-gray-300 flex items-center justify-end gap-1">
+                                  <Lock size={12} /> Sin acceso
+                                </span>
+                              )}
                             </td>
                           </tr>
                         ))}
@@ -257,7 +328,7 @@ export default function SectionManager({ sections }: { sections: any[] }) {
                     </table>
                   ) : (
                     <div className="text-center py-8 text-gray-500 bg-white border border-gray-200 rounded-lg border-dashed">
-                      No hay campos en esta sección. Añade un campo nuevo.
+                      No hay campos en esta sección. {canEdit ? 'Añade un campo nuevo.' : ''}
                     </div>
                   )}
                 </div>
@@ -272,6 +343,33 @@ export default function SectionManager({ sections }: { sections: any[] }) {
           </div>
         )}
       </div>
+
+      {/* Modal Sin Permisos */}
+      {noPermissionModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-red-50">
+              <h3 className="font-bold text-red-800 flex items-center gap-2">
+                <ShieldX className="text-red-500" size={18} />
+                Sin permisos de acceso
+              </h3>
+              <button onClick={() => setNoPermissionModal(null)} className="text-gray-400 hover:text-gray-600">×</button>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-700">{noPermissionModal}</p>
+            </div>
+            <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setNoPermissionModal(null)}
+                className="px-4 py-2 bg-[#1d4328] text-white rounded hover:bg-[#255633] text-sm font-medium"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Eliminar Sección */}
       {sectionToDelete && (
