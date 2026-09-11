@@ -85,8 +85,11 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
     const fv = piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'nombre') ||
                piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'nombre_pieza') ||
                piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'titulo') ||
-               piece.fieldValues?.find((fv: any) => fv.value && fv.value.trim() !== '')
-    return fv?.value || piece.registryCode || "Sin Título"
+               // Último fallback: primer campo de texto (no numérico puro) con valor
+               piece.fieldValues?.find((fv: any) =>
+                 fv.value && fv.value.trim() !== '' && isNaN(Number(fv.value.trim()))
+               )
+    return fv?.value || piece.registryCode || "Sin nombre"
   }
 
   const handleDeleteConfirm = async () => {
@@ -201,7 +204,7 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
             <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 shadow-sm z-10">
               <tr>
                 <th className="px-4 py-3 font-semibold text-gray-600">Código</th>
-                <th className="px-4 py-3 font-semibold text-gray-600">Título</th>
+                <th className="px-4 py-3 font-semibold text-gray-600">Nombre</th>
                 <th className="px-4 py-3 font-semibold text-gray-600">Estado</th>
                 <th className="px-4 py-3 font-semibold text-gray-600 text-right">Acciones</th>
               </tr>
