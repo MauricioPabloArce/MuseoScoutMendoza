@@ -110,17 +110,17 @@ export default function CategoryTree({ data, availableSections = [], members = [
     const prefix = catPrefix || (parentPrefix + generatedPrefix)
     const slug = catName.toLowerCase().replace(/[^a-z0-9]/g, '-')
     
-    let finalImageUrl = catImageUrl
-    if (file) {
-      const formData = new FormData()
-      formData.append("file", file)
-      const uploadRes = await uploadCategoryImage(formData)
-      if (uploadRes.url) {
-        finalImageUrl = uploadRes.url
-      }
-    }
-
     try {
+      let finalImageUrl = catImageUrl
+      if (file) {
+        const formData = new FormData()
+        formData.append("file", file)
+        const uploadRes = await uploadCategoryImage(formData)
+        if (uploadRes.url) {
+          finalImageUrl = uploadRes.url
+        }
+      }
+
       let res
       if (editCategoryId) {
         res = await updateCategory(editCategoryId, { name: catName, slug, prefix, description: catDescription, parentId: targetParentId, sectionIds: selectedSections, imageUrl: finalImageUrl || undefined, leaderId: catLeaderId || undefined })
@@ -137,7 +137,7 @@ export default function CategoryTree({ data, availableSections = [], members = [
       }
     } catch (error: any) {
       setIsSaving(false)
-      toast.error(error.message || "Error al procesar la categoría")
+      toast.error(error.message || "La imagen es muy pesada o hubo un error de conexión")
     }
   }
 
