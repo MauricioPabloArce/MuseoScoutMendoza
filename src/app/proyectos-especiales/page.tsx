@@ -71,7 +71,7 @@ export default async function ProyectosEspecialesPublicPage() {
                           }
                           if (block.type === 'image') {
                             return (
-                              <div key={block.id} className="max-w-4xl mx-auto rounded-xl overflow-hidden shadow-lg bg-gray-100">
+                              <div key={block.id} className="max-w-md mx-auto rounded-xl overflow-hidden shadow-md bg-gray-100">
                                 <ImageLightbox src={block.url} alt={block.caption || `${proj.name} imagen`} caption={block.caption} />
                               </div>
                             )

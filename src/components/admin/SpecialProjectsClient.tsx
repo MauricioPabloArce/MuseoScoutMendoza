@@ -213,6 +213,10 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
               <input type="text" value={theme} onChange={e => setTheme(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#31573c] focus:outline-none" placeholder="Temática general" />
             </div>
             <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Objetivo</label>
+              <textarea value={objective} onChange={e => setObjective(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#31573c] focus:outline-none min-h-[80px]" placeholder="¿Qué se busca lograr con esto?" />
+            </div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">Contenido Dinámico del Proyecto</label>
               
               <div className="space-y-4">
@@ -309,10 +313,6 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
                   <Paperclip size={18} /> Agregar Archivo
                 </button>
               </div>
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Objetivo</label>
-              <textarea value={objective} onChange={e => setObjective(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#31573c] focus:outline-none min-h-[80px]" placeholder="¿Qué se busca lograr con esto?" />
             </div>
             <div className="md:col-span-2 flex items-center gap-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
               <input 
