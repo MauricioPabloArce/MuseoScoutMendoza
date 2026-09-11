@@ -11,7 +11,11 @@ export async function getPieces() {
     include: {
       category: true,
       fieldValues: {
-        include: { field: true }
+        include: { 
+          field: {
+            include: { options: true }
+          }
+        }
       },
       media: true
     },

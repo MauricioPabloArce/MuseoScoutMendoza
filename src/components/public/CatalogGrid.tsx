@@ -14,6 +14,18 @@ export default function CatalogGrid({ pieces }: { pieces: any[] }) {
     return { title: fv?.value || piece.registryCode || "Sin Título", fieldId: fv?.fieldId }
   }
 
+  const formatFieldValue = (fv: any) => {
+    if (!fv.value) return '-';
+    if (fv.field?.type === 'BOOLEAN') {
+      return fv.value === 'true' ? 'Sí' : (fv.value === 'false' ? 'No' : fv.value);
+    }
+    if (fv.field?.type === 'SELECT' && Array.isArray(fv.field.options)) {
+      const option = fv.field.options.find((opt: any) => opt.value === fv.value);
+      return option ? option.label : fv.value;
+    }
+    return fv.value;
+  }
+
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -32,7 +44,7 @@ export default function CatalogGrid({ pieces }: { pieces: any[] }) {
                 <img 
                   src={imageUrl} 
                   alt={title} 
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="w-full h-full object-contain p-2 bg-white transition-transform duration-500 group-hover:scale-105"
                 />
               ) : (
                 <span className="text-sm">Sin imagen</span>
@@ -113,7 +125,7 @@ export default function CatalogGrid({ pieces }: { pieces: any[] }) {
                             {fv.field?.name || "Desconocido"}
                           </span>
                           <span className="text-gray-800 break-words">
-                            {fv.value || '-'}
+                            {formatFieldValue(fv)}
                           </span>
                         </div>
                       )})}

@@ -54,7 +54,11 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Pro
       category: true, 
       media: true,
       fieldValues: {
-        include: { field: true }
+        include: { 
+          field: {
+            include: { options: true }
+          }
+        }
       }
     }
   })
