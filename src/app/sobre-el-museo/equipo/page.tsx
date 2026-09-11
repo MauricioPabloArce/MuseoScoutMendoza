@@ -12,7 +12,7 @@ export default async function EquipoPage() {
       user: true
     },
     orderBy: {
-      createdAt: 'asc'
+      user: { name: 'asc' }
     }
   })
 
