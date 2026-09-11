@@ -40,7 +40,7 @@ export default async function Header() {
         </div>
       </nav>
       
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         {session?.user ? (
           <div className="relative group">
             <button className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-full md:rounded-lg transition-colors">
@@ -53,11 +53,15 @@ export default async function Header() {
               )}
               <span className="text-sm font-medium hidden md:block">{session.user.name?.split(' ')[0]}</span>
             </button>
-            <div className="absolute top-full right-0 mt-2 w-48 bg-white text-gray-800 shadow-xl rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-gray-200 flex flex-col overflow-hidden">
+            <div className="absolute top-full right-0 mt-2 w-52 bg-white text-gray-800 shadow-xl rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-gray-200 flex flex-col overflow-hidden">
               <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
                 <p className="text-sm font-bold text-gray-900 truncate">{session.user.name}</p>
                 <p className="text-xs text-gray-500 truncate">{session.user.email}</p>
               </div>
+              <Link href="/admin" className="px-4 py-3 text-sm hover:bg-green-50 flex items-center gap-2 text-[#1d4328] font-semibold border-b border-gray-100">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="3" height="11" x="2" y="13"/><rect width="3" height="7" x="9" y="7"/><rect width="3" height="3" x="16" y="3"/></svg>
+                Panel de Administración
+              </Link>
               <Link href="/mi-cuenta" className="px-4 py-3 text-sm hover:bg-gray-50 flex items-center gap-2">
                 <UserIcon size={16} className="text-gray-400" />
                 Mi cuenta
@@ -76,10 +80,19 @@ export default async function Header() {
             </div>
           </div>
         ) : (
-          <Link href="/ingresar" className="text-sm bg-[#0B69CA] text-white px-4 py-2 rounded hover:bg-[#0957A8] transition-colors flex items-center gap-2 font-bold">
-            <LogIn size={16} />
-            <span className="hidden sm:inline">Ingresar</span>
-          </Link>
+          <>
+            <Link
+              href="/ingresar"
+              className="text-sm border border-gray-500 text-gray-200 px-3 py-1.5 rounded hover:bg-gray-700 transition-colors flex items-center gap-2 whitespace-nowrap"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="3" height="11" x="2" y="13"/><rect width="3" height="7" x="9" y="7"/><rect width="3" height="3" x="16" y="3"/></svg>
+              <span className="hidden sm:inline text-xs">Acceso Colaboradores</span>
+            </Link>
+            <Link href="/ingresar" className="text-sm bg-[#0B69CA] text-white px-4 py-2 rounded hover:bg-[#0957A8] transition-colors flex items-center gap-2 font-bold">
+              <LogIn size={16} />
+              <span className="hidden sm:inline">Ingresar</span>
+            </Link>
+          </>
         )}
       </div>
     </header>
