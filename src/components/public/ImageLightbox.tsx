@@ -18,15 +18,19 @@ export default function ImageLightbox({
 
   return (
     <>
-      <div className={`flex flex-col cursor-zoom-in ${className || ''}`} onClick={() => setIsOpen(true)}>
-        <div className="relative group overflow-hidden">
+      {/* Thumbnail */}
+      <div
+        className={`cursor-zoom-in group ${className || ''}`}
+        onClick={() => setIsOpen(true)}
+      >
+        <div className="relative w-full h-full overflow-hidden">
           <img 
             src={src} 
             alt={alt}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 z-10">
-            <ZoomIn className="text-white drop-shadow-md" size={22} />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+            <ZoomIn className="text-white drop-shadow-md opacity-0 group-hover:opacity-100 transition-opacity" size={18} />
           </div>
         </div>
         {caption && (
@@ -34,13 +38,14 @@ export default function ImageLightbox({
         )}
       </div>
 
+      {/* Lightbox Modal */}
       {isOpen && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 p-4"
           onClick={() => setIsOpen(false)}
         >
           <button 
-            className="absolute top-4 right-4 p-2 text-white hover:bg-white/10 rounded-full transition-colors"
+            className="absolute top-4 right-4 p-2 text-white hover:bg-white/10 rounded-full transition-colors z-10"
             onClick={(e) => {
               e.stopPropagation()
               setIsOpen(false)
