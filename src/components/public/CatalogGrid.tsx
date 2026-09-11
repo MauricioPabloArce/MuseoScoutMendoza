@@ -6,11 +6,19 @@ import { X } from "lucide-react"
 export default function CatalogGrid({ pieces }: { pieces: any[] }) {
   const [selectedPiece, setSelectedPiece] = useState<any | null>(null)
 
+  const getPieceTitle = (piece: any) => {
+    const fv = piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'nombre') ||
+               piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'nombre_pieza') ||
+               piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'titulo') ||
+               piece.fieldValues?.find((fv: any) => fv.value && fv.value.trim() !== '' && isNaN(Number(fv.value.trim())))
+    return { title: fv?.value || piece.registryCode || "Sin Título", fieldId: fv?.fieldId }
+  }
+
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {pieces.map(piece => {
-          const title = piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'titulo')?.value || "Sin Título"
+          const { title } = getPieceTitle(piece)
           const imageUrl = piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'imagen_principal')?.value || piece.media?.[0]?.url
 
           return (
@@ -61,7 +69,7 @@ export default function CatalogGrid({ pieces }: { pieces: any[] }) {
               {/* Media Section */}
               <div className="w-full md:w-1/2 bg-gray-100 flex-shrink-0 relative overflow-hidden flex items-center justify-center h-64 md:h-auto min-h-[300px]">
                 {(() => {
-                  const title = selectedPiece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'titulo')?.value || "Sin Título"
+                  const { title } = getPieceTitle(selectedPiece)
                   const imageUrl = selectedPiece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'imagen_principal')?.value || selectedPiece.media?.[0]?.url
                   
                   return imageUrl ? (
@@ -83,7 +91,7 @@ export default function CatalogGrid({ pieces }: { pieces: any[] }) {
                     {selectedPiece.registryCode}
                   </span>
                   <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 leading-tight">
-                    {selectedPiece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'titulo')?.value || "Sin Título"}
+                    {getPieceTitle(selectedPiece).title}
                   </h2>
                   <p className="text-[#374151] font-medium border-b border-gray-200 pb-4">
                     {selectedPiece.category.name}
@@ -95,9 +103,9 @@ export default function CatalogGrid({ pieces }: { pieces: any[] }) {
                   {selectedPiece.fieldValues && selectedPiece.fieldValues.length > 0 ? (
                     <div className="grid grid-cols-1 gap-y-4">
                       {selectedPiece.fieldValues.map((fv: any) => {
-                        // Skip rendering titulo and imagen_principal in the table if desired, 
-                        // but since they are fields, let's render them unless they are imagen_principal
-                        if (fv.field?.internalKey === 'imagen_principal') return null;
+                        // Skip rendering titulo and imagen_principal in the table
+                        const titleFieldId = getPieceTitle(selectedPiece).fieldId;
+                        if (fv.field?.internalKey === 'imagen_principal' || fv.fieldId === titleFieldId) return null;
                         
                         return (
                         <div key={fv.id} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
