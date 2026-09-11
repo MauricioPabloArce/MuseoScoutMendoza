@@ -120,19 +120,24 @@ export default function CategoryTree({ data, availableSections = [], members = [
       }
     }
 
-    let res
-    if (editCategoryId) {
-      res = await updateCategory(editCategoryId, { name: catName, slug, prefix, description: catDescription, parentId: targetParentId, sectionIds: selectedSections, imageUrl: finalImageUrl || undefined, leaderId: catLeaderId || undefined })
-    } else {
-      res = await createCategory({ name: catName, slug, prefix, description: catDescription, parentId: targetParentId, sectionIds: selectedSections, imageUrl: finalImageUrl || undefined, leaderId: catLeaderId || undefined })
-    }
-    
-    setIsSaving(false)
-    if (res?.error) {
-      toast.error(res.error)
-    } else {
-      toast.success(editCategoryId ? "Categoría actualizada con éxito" : "Categoría creada con éxito")
-      setModalOpen(false)
+    try {
+      let res
+      if (editCategoryId) {
+        res = await updateCategory(editCategoryId, { name: catName, slug, prefix, description: catDescription, parentId: targetParentId, sectionIds: selectedSections, imageUrl: finalImageUrl || undefined, leaderId: catLeaderId || undefined })
+      } else {
+        res = await createCategory({ name: catName, slug, prefix, description: catDescription, parentId: targetParentId, sectionIds: selectedSections, imageUrl: finalImageUrl || undefined, leaderId: catLeaderId || undefined })
+      }
+      
+      setIsSaving(false)
+      if (res?.error) {
+        toast.error(res.error)
+      } else {
+        toast.success(editCategoryId ? "Categoría actualizada con éxito" : "Categoría creada con éxito")
+        setModalOpen(false)
+      }
+    } catch (error: any) {
+      setIsSaving(false)
+      toast.error(error.message || "Error al procesar la categoría")
     }
   }
 
