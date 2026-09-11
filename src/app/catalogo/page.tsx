@@ -89,11 +89,11 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Pro
             {activeCategory && (
               <div className="mb-8 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                 {activeCategory.imageUrl && (
-                  <div className="w-full h-48 sm:h-64 overflow-hidden bg-gray-100">
+                  <div className="w-full h-48 sm:h-64 overflow-hidden bg-white">
                     <SafeImage
                       src={activeCategory.imageUrl}
                       alt={activeCategory.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain p-4"
                     />
                   </div>
                 )}
