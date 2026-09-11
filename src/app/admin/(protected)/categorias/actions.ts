@@ -99,9 +99,11 @@ export async function createCategory(data: { name: string; slug: string; prefix:
     }
     
     let finalSectionIds = data.sectionIds || []
+    // Solo agregar "Datos Pieza" si no fue incluida por el usuario
     if (!finalSectionIds.includes(defaultSection.id)) {
-      finalSectionIds = [defaultSection.id, ...finalSectionIds]
+      finalSectionIds = [...finalSectionIds, defaultSection.id]
     }
+    // El orden que llegue en el array es el que el usuario definió
 
     await prisma.category.create({
       data: {
@@ -145,9 +147,11 @@ export async function updateCategory(id: string, data: { name: string; slug: str
     }
     
     let finalSectionIds = data.sectionIds || []
+    // Solo agregar "Datos Pieza" si no fue incluida por el usuario
     if (!finalSectionIds.includes(defaultSection.id)) {
-      finalSectionIds = [defaultSection.id, ...finalSectionIds]
+      finalSectionIds = [...finalSectionIds, defaultSection.id]
     }
+    // El orden que llegue en el array es el que el usuario definió
 
     await prisma.categorySection.deleteMany({
       where: { categoryId: id }

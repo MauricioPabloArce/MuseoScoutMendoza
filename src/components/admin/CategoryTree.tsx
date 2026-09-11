@@ -72,7 +72,9 @@ export default function CategoryTree({ data, availableSections = [], members = [
       setFile(null)
       setFile(null)
       setTargetParentId(editNode.parentId || undefined)
-      setSelectedSections(editNode.sections?.map((s: any) => s.sectionId) || [])
+      // Ordenar por el campo order para respetar el orden guardado
+      const sortedSections = [...(editNode.sections || [])].sort((a: any, b: any) => a.order - b.order)
+      setSelectedSections(sortedSections.map((s: any) => s.sectionId))
       setCategoryHasChildren(editNode.children?.length > 0)
     } else {
       setEditCategoryId(null)
