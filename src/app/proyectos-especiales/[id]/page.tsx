@@ -74,8 +74,13 @@ export default async function ProyectoEspecialDetail({ params }: { params: Promi
                 }
                 if (block.type === 'image') {
                   return (
-                    <div key={block.id} className="w-72 h-52 rounded-xl overflow-hidden shadow-md bg-gray-100 mx-auto flex-shrink-0">
-                      <ImageLightbox src={block.url} alt={block.caption || `${proj.name} imagen`} caption={block.caption} />
+                    <div key={block.id} className="flex items-start gap-4">
+                      <div className="w-40 h-32 rounded-xl overflow-hidden shadow-md bg-gray-100 flex-shrink-0">
+                        <ImageLightbox src={block.url} alt={block.caption || `${proj.name} imagen`} />
+                      </div>
+                      {block.caption && (
+                        <p className="text-gray-600 text-sm leading-relaxed pt-2 italic">{block.caption}</p>
+                      )}
                     </div>
                   )
                 }
