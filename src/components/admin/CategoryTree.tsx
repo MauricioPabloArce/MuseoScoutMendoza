@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { ChevronRight, ChevronDown, ChevronUp, Folder, FolderOpen, MoreVertical, Plus, Edit, Eye, EyeOff, Archive, Save, Trash2, AlertTriangle, ShieldX } from "lucide-react"
 import type { CategoryWithPieceCount } from "@/app/admin/(protected)/categorias/actions"
-import { uploadCategoryImage, togglePublishCategory, archiveCategory, deleteCategory, createCategory, updateCategory } from "@/app/admin/(protected)/categorias/actions"
+import { createCategory, updateCategory, deleteCategory, uploadCategoryImage, togglePublishCategory, archiveCategory } from "@/app/admin/(protected)/categorias/actions"
+import FileErrorModal from "./FileErrorModal"
 import toast from "react-hot-toast"
 
 interface TreeNode {
@@ -49,6 +50,7 @@ export default function CategoryTree({ data, availableSections = [], members = [
   const [catPrefix, setCatPrefix] = useState("")
   const [catDescription, setCatDescription] = useState("")
   const [catImageUrl, setCatImageUrl] = useState<string | null>(null)
+  const [showSizeError, setShowSizeError] = useState(false)
   const [catLeaderId, setCatLeaderId] = useState<string>("")
   const [file, setFile] = useState<File | null>(null)
   const [selectedSections, setSelectedSections] = useState<string[]>([])
@@ -394,10 +396,20 @@ export default function CategoryTree({ data, availableSections = [], members = [
                         <input 
                           type="file" 
                           accept="image/*"
-                          onChange={e => setFile(e.target.files?.[0] || null)}
+                          onChange={e => {
+                            const f = e.target.files?.[0]
+                            if (f) {
+                              if (f.size > 5 * 1024 * 1024) {
+                                setShowSizeError(true)
+                                e.target.value = ""
+                                return
+                              }
+                              setFile(f)
+                            }
+                          }}
                           className="text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300 w-full cursor-pointer"
                         />
-                        <p className="text-xs text-gray-400 text-center mt-2">Recomendado: Formato apaisado, máx 2MB</p>
+                        <p className="text-xs text-gray-400 text-center mt-2">Recomendado: Formato apaisado, máx 5MB</p>
                       </>
                     )}
                   </div>
@@ -609,7 +621,12 @@ export default function CategoryTree({ data, availableSections = [], members = [
           </div>
         </div>
       )}
+
+      <FileErrorModal 
+        isOpen={showSizeError} 
+        onClose={() => setShowSizeError(false)} 
+        maxSizeMB={5} 
+      />
     </>
   )
 }
-

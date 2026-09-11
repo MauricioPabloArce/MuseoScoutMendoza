@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { updatePiece, getFieldsForCategory, createPiece, uploadImage } from "@/app/admin/(protected)/piezas/actions"
 import { Save, Loader2, ArrowLeft, Image as ImageIcon } from "lucide-react"
 import toast from "react-hot-toast"
+import FileErrorModal from "./FileErrorModal"
 
 type FieldDef = {
   id: string
@@ -54,6 +55,7 @@ export default function PieceForm({
   
   // To hold files to upload for IMAGE type fields
   const [fileUploads, setFileUploads] = useState<Record<string, File>>({})
+  const [showSizeError, setShowSizeError] = useState(false)
 
   useEffect(() => {
     if (!categoryId) {
@@ -228,6 +230,11 @@ export default function PieceForm({
                             onChange={e => {
                               const file = e.target.files?.[0]
                               if (file) {
+                                if (file.size > 5 * 1024 * 1024) {
+                                  setShowSizeError(true)
+                                  e.target.value = ""
+                                  return
+                                }
                                 setFileUploads(prev => ({ ...prev, [field.id]: file }))
                               }
                             }}
@@ -283,6 +290,12 @@ export default function PieceForm({
           {isEditing ? "Actualizar Pieza" : "Registrar Pieza"}
         </button>
       </div>
+
+      <FileErrorModal 
+        isOpen={showSizeError} 
+        onClose={() => setShowSizeError(false)} 
+        maxSizeMB={5} 
+      />
     </form>
   )
 }

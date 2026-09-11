@@ -1,7 +1,12 @@
 import Header from "@/components/public/Header"
 import Footer from "@/components/public/Footer"
 import prisma from "@/lib/prisma"
-import { Target } from "lucide-react"
+import { Target, FileText, Download } from "lucide-react"
+
+// Función auxiliar para detectar si una URL es una imagen
+function isImage(url: string) {
+  return /\.(jpg|jpeg|png|webp|avif|gif|svg)$/.test(url.toLowerCase())
+}
 
 export default async function ProyectosEspecialesPublicPage() {
   const projects = await prisma.specialProject.findMany({
@@ -61,9 +66,36 @@ export default async function ProyectosEspecialesPublicPage() {
 
                   {proj.images && proj.images.length > 0 && (
                     <div className="mt-16">
-                      <h4 className="text-xl font-bold text-gray-900 mb-8 border-b pb-4">Galería del Proyecto</h4>
-                      <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
-                        {proj.images.map((img, i) => (
+                      <h4 className="text-xl font-bold text-gray-900 mb-8 border-b pb-4">Galería y Documentos Adjuntos</h4>
+                      
+                      {/* Documentos */}
+                      {proj.images.filter(img => !isImage(img.url)).length > 0 && (
+                        <div className="mb-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {proj.images.filter(img => !isImage(img.url)).map(file => (
+                            <a 
+                              key={file.id} 
+                              href={file.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-4 p-4 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-300 transition-colors group"
+                            >
+                              <div className="bg-white p-3 rounded-lg shadow-sm group-hover:shadow text-[#0B69CA]">
+                                <FileText size={24} />
+                              </div>
+                              <div className="flex-1">
+                                <h5 className="font-bold text-gray-800 line-clamp-1">{file.caption || "Documento Adjunto"}</h5>
+                                <p className="text-sm text-gray-500 truncate">{file.url.split('/').pop()}</p>
+                              </div>
+                              <Download size={20} className="text-gray-400 group-hover:text-[#0B69CA] transition-colors" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Imágenes */}
+                      {proj.images.filter(img => isImage(img.url)).length > 0 && (
+                        <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+                          {proj.images.filter(img => isImage(img.url)).map((img, i) => (
                           <figure key={img.id} className="break-inside-avoid relative group rounded-xl overflow-hidden bg-gray-100">
                             <img 
                               src={img.url} 
@@ -76,8 +108,9 @@ export default async function ProyectosEspecialesPublicPage() {
                               </figcaption>
                             )}
                           </figure>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

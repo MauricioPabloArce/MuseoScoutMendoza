@@ -2,7 +2,13 @@
 
 import { useState } from "react"
 import { createSpecialProject, updateSpecialProject, deleteSpecialProject, uploadProjectImage } from "@/app/admin/(protected)/proyectos-especiales/actions"
-import { Plus, Edit2, Trash2, X, Image as ImageIcon, Sparkles, Eye, Target } from "lucide-react"
+import FileErrorModal from "./FileErrorModal"
+import { Plus, Edit2, Trash2, X, Image as ImageIcon, Sparkles, Eye, Target, FileText } from "lucide-react"
+
+// Función auxiliar para detectar si una URL es una imagen
+function isImage(url: string) {
+  return /\.(jpg|jpeg|png|webp|avif|gif|svg)$/.test(url.toLowerCase())
+}
 import toast from "react-hot-toast"
 
 type SpecialProject = any
@@ -21,6 +27,9 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
   const [isPublished, setIsPublished] = useState(false)
   const [images, setImages] = useState<{ url: string; caption: string; order: number }[]>([])
   
+  // Error Modal State
+  const [showSizeError, setShowSizeError] = useState(false)
+
   // Preview State
   const [previewProject, setPreviewProject] = useState<SpecialProject | null>(null)
 
@@ -56,7 +65,8 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("El archivo excede el tamaño máximo de 5MB")
+      setShowSizeError(true)
+      e.target.value = ""
       return
     }
 
@@ -183,35 +193,37 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
 
           <div className="border-t pt-6">
             <div className="flex justify-between items-center mb-4">
-              <label className="block text-sm font-medium text-gray-700">Imágenes (Máximo 15, max 5MB)</label>
+              <label className="block text-sm font-medium text-gray-700">Imágenes y Archivos (Máximo 15, max 5MB)</label>
               <div>
                 <input 
                   type="file" 
                   id="project-image-upload" 
                   className="hidden" 
-                  accept="image/*"
+                  accept="image/*,application/pdf,.doc,.docx"
                   onChange={handleFileUpload}
                 />
                 <button type="button" onClick={() => document.getElementById('project-image-upload')?.click()} className="text-sm bg-[#31573c] hover:bg-[#25422d] text-white px-3 py-1.5 rounded flex items-center gap-2 transition-colors disabled:opacity-50" disabled={isLoading}>
-                  <Plus size={16} /> Subir Imagen
+                  <Plus size={16} /> Subir Archivo
                 </button>
               </div>
             </div>
             
             {images.length === 0 ? (
               <div className="text-center py-8 bg-gray-50 border-2 border-dashed border-gray-200 rounded text-gray-500 text-sm">
-                No hay imágenes configuradas. Puedes subir hasta 15 imágenes.
+                No hay archivos configurados. Puedes subir hasta 15 archivos o imágenes.
               </div>
             ) : (
               <div className="space-y-4">
                 {images.map((img, idx) => (
                   <div key={idx} className="flex gap-3 items-start p-3 border rounded bg-gray-50">
-                    <div className="w-20 h-20 bg-gray-200 rounded border shadow-sm flex-shrink-0 overflow-hidden">
-                      {img.url ? <img src={img.url} alt="" className="w-full h-full object-cover" /> : <ImageIcon size={20} className="m-auto mt-6 text-gray-400" />}
+                    <div className="w-20 h-20 bg-gray-200 rounded border shadow-sm flex-shrink-0 overflow-hidden flex items-center justify-center">
+                      {img.url ? (
+                        isImage(img.url) ? <img src={img.url} alt="" className="w-full h-full object-cover" /> : <FileText size={32} className="text-[#0B69CA]" />
+                      ) : <ImageIcon size={20} className="text-gray-400" />}
                     </div>
                     <div className="flex-1 space-y-2">
-                      <p className="text-sm text-gray-600 truncate border border-transparent p-2 bg-white rounded shadow-sm">{img.url}</p>
-                      <input type="text" value={img.caption} onChange={e => handleImageChange(idx, 'caption', e.target.value)} placeholder="Descripción / Texto sobre la imagen (opcional)" className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#31573c] focus:outline-none text-sm" />
+                      <p className="text-sm text-gray-600 truncate border border-transparent p-2 bg-white rounded shadow-sm" title={img.url}>{img.url}</p>
+                      <input type="text" value={img.caption} onChange={e => handleImageChange(idx, 'caption', e.target.value)} placeholder="Descripción / Título del archivo (opcional)" className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#31573c] focus:outline-none text-sm" />
                     </div>
                     <button type="button" onClick={() => handleRemoveImage(idx)} className="p-2 text-red-500 hover:bg-red-100 rounded mt-0.5 transition-colors">
                       <Trash2 size={18} />
@@ -398,6 +410,12 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
           </div>
         </div>
       )}
+      
+      <FileErrorModal 
+        isOpen={showSizeError} 
+        onClose={() => setShowSizeError(false)} 
+        maxSizeMB={5} 
+      />
     </div>
   )
 }

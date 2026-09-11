@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { createExhibition, updateExhibition, deleteExhibition, uploadExhibitionImage } from "@/app/admin/(protected)/muestras/actions"
-import { Plus, Edit2, Trash2, X, Image as ImageIcon, Presentation } from "lucide-react"
+import FileErrorModal from "./FileErrorModal"
+import { Plus, Edit2, Trash2, X, Image as ImageIcon, MapPin, Calendar, Presentation } from "lucide-react"
 import toast from "react-hot-toast"
 
 type Exhibition = any
@@ -12,6 +13,7 @@ export default function ExhibitionsClient({ initialData }: { initialData: Exhibi
   const [isEditing, setIsEditing] = useState(false)
   const [current, setCurrent] = useState<Partial<Exhibition> | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [showSizeError, setShowSizeError] = useState(false)
 
   // Form State
   const [name, setName] = useState("")
@@ -53,7 +55,8 @@ export default function ExhibitionsClient({ initialData }: { initialData: Exhibi
     }
     
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("El archivo excede el tamaño máximo de 5MB")
+      setShowSizeError(true)
+      e.target.value = ""
       return
     }
 
@@ -273,6 +276,12 @@ export default function ExhibitionsClient({ initialData }: { initialData: Exhibi
           </div>
         )}
       </div>
+      
+      <FileErrorModal 
+        isOpen={showSizeError} 
+        onClose={() => setShowSizeError(false)} 
+        maxSizeMB={5} 
+      />
     </div>
   )
 }
