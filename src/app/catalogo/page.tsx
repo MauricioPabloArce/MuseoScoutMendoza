@@ -7,6 +7,8 @@ import CatalogFilters from "@/components/public/CatalogFilters"
 import CatalogGrid from "@/components/public/CatalogGrid"
 import CategorySidebar from "@/components/public/CategorySidebar"
 
+export const dynamic = 'force-dynamic'
+
 export default async function CatalogoPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const resolvedParams = await searchParams;
   const q = typeof resolvedParams.q === 'string' ? resolvedParams.q : undefined;
@@ -87,7 +89,12 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Pro
               <div className="mb-8 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                 {activeCategory.imageUrl && (
                   <div className="w-full h-48 sm:h-64 overflow-hidden bg-gray-100">
-                    <img src={activeCategory.imageUrl} alt={activeCategory.name} className="w-full h-full object-cover" />
+                    <img
+                      src={activeCategory.imageUrl}
+                      alt={activeCategory.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    />
                   </div>
                 )}
                 <div className="p-6 sm:p-8">
@@ -126,7 +133,16 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Pro
                     <Link href={`/catalogo?categoria=${sub.id}`} key={sub.id} className="group bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-200 overflow-hidden transition-all hover:-translate-y-1">
                       <div className="h-40 bg-gray-100 overflow-hidden relative">
                         {sub.imageUrl ? (
-                          <img src={sub.imageUrl} alt={sub.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          <img
+                            src={sub.imageUrl}
+                            alt={sub.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            onError={(e) => {
+                              const el = e.target as HTMLImageElement
+                              el.style.display = 'none'
+                              el.parentElement!.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50"><span class="font-serif text-3xl font-bold opacity-30">${sub.prefix}</span></div>`
+                            }}
+                          />
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 group-hover:bg-gray-100 transition-colors">
                             <span className="font-serif text-3xl font-bold opacity-30">{sub.prefix}</span>
