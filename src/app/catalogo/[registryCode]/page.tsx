@@ -138,7 +138,13 @@ export default async function PieceDetailPage({ params }: { params: Promise<{ re
 
               {Object.entries(
                 piece.fieldValues
-                  .filter((fv: any) => fv.value && fv.value.trim() !== '' && fv.field?.name)
+                  .filter((fv: any) => 
+                    fv.value && 
+                    fv.value.trim() !== '' && 
+                    fv.field?.name &&
+                    fv.id !== titleField?.id && 
+                    fv.id !== imageField?.id
+                  )
                   .reduce((acc: Record<string, any[]>, fv: any) => {
                     const sectionName = fv.field.section?.name || (fv.field.isGeneral ? 'Datos generales' : 'Datos específicos')
                     if (!acc[sectionName]) acc[sectionName] = []
