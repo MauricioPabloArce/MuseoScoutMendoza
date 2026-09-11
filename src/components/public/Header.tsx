@@ -15,6 +15,8 @@ export default function Header() {
       <nav className="hidden md:flex gap-6 text-sm font-medium items-center">
         <Link href="/" className="hover:text-white transition-colors">Inicio</Link>
         <Link href="/catalogo" className="hover:text-white transition-colors">Catálogo</Link>
+        <Link href="/muestras" className="hover:text-white transition-colors">Muestras</Link>
+        <Link href="/proyectos-especiales" className="hover:text-white transition-colors">Proyectos Especiales</Link>
         
         {/* Dropdown for Sobre el Museo */}
         <div className="relative group">

@@ -11,6 +11,8 @@ export default function SidebarNav() {
     { name: "Acervo (Piezas)", href: "/admin/piezas" },
     { name: "Categorías", href: "/admin/categorias" },
     { name: "Campos Dinámicos", href: "/admin/campos" },
+    { name: "Muestras", href: "/admin/muestras" },
+    { name: "Proyectos Especiales", href: "/admin/proyectos-especiales" },
     { name: "Usuarios y Roles", href: "/admin/usuarios" },
     { name: "Mi Perfil", href: "/admin/perfil" },
   ]

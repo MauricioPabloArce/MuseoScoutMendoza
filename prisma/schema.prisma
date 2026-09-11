@@ -19,24 +19,24 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts      Account[]
-  sessions      Session[]
-  member        MuseumMember?
+  accounts Account[]
+  sessions Session[]
+  member   MuseumMember?
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?
-  access_token       String?
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -68,9 +68,9 @@ model MuseumMember {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  permissions CategoryPermission[]
-  ledCategories Category[]         @relation("CategoryLeader")
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permissions   CategoryPermission[]
+  ledCategories Category[]           @relation("CategoryLeader")
 }
 
 model Category {
@@ -88,26 +88,26 @@ model Category {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children    Category[] @relation("CategoryHierarchy")
-  leader      MuseumMember? @relation("CategoryLeader", fields: [leaderId], references: [id], onDelete: SetNull)
-  
+  parent   Category?     @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[]    @relation("CategoryHierarchy")
+  leader   MuseumMember? @relation("CategoryLeader", fields: [leaderId], references: [id], onDelete: SetNull)
+
   sections    CategorySection[]
   permissions CategoryPermission[]
   pieces      MuseumPiece[]
 }
 
 model CategoryPermission {
-  id               String   @id @default(cuid())
-  memberId         String
-  categoryId       String
-  includeDescendants Boolean @default(false)
-  canView          Boolean  @default(true)
-  canCreate        Boolean  @default(false)
-  canEdit          Boolean  @default(false)
-  canArchive       Boolean  @default(false)
-  createdAt        DateTime @default(now())
-  
+  id                 String   @id @default(cuid())
+  memberId           String
+  categoryId         String
+  includeDescendants Boolean  @default(false)
+  canView            Boolean  @default(true)
+  canCreate          Boolean  @default(false)
+  canEdit            Boolean  @default(false)
+  canArchive         Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
   member   MuseumMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
   category Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
@@ -119,83 +119,83 @@ model FieldSection {
   name        String   @unique
   description String?
   order       Int      @default(0)
-  createdBy   String?  // userId of creator (null = system/admin section)
+  createdBy   String? // userId of creator (null = system/admin section)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  fields      FieldDefinition[]
-  categories  CategorySection[]
+  fields     FieldDefinition[]
+  categories CategorySection[]
 }
 
 model FieldDefinition {
-  id          String   @id @default(cuid())
-  name        String
-  internalKey String   @unique
-  description String?
-  type        String   // TEXT, NUMBER, DATE, BOOLEAN, SELECT, MULTISELECT, FILE, IMAGE
-  isActive    Boolean  @default(true)
-  isRequired  Boolean  @default(false)
-  isPublic    Boolean  @default(false)
-  isSearchable Boolean @default(false)
-  order       Int      @default(0)
+  id           String   @id @default(cuid())
+  name         String
+  internalKey  String   @unique
+  description  String?
+  type         String // TEXT, NUMBER, DATE, BOOLEAN, SELECT, MULTISELECT, FILE, IMAGE
+  isActive     Boolean  @default(true)
+  isRequired   Boolean  @default(false)
+  isPublic     Boolean  @default(false)
+  isSearchable Boolean  @default(false)
+  order        Int      @default(0)
   defaultValue String?
-  validation  String?  // JSON string
-  isGeneral   Boolean  @default(false)
-  sectionId   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  validation   String? // JSON string
+  isGeneral    Boolean  @default(false)
+  sectionId    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  section        FieldSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
-  options        FieldOption[]
-  pieceValues    PieceFieldValue[]
+  section     FieldSection?     @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  options     FieldOption[]
+  pieceValues PieceFieldValue[]
 }
 
 model FieldOption {
-  id        String   @id @default(cuid())
-  fieldId   String
-  label     String
-  value     String
-  order     Int      @default(0)
-  
-  field     FieldDefinition @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  fieldId String
+  label   String
+  value   String
+  order   Int    @default(0)
+
+  field FieldDefinition @relation(fields: [fieldId], references: [id], onDelete: Cascade)
 }
 
 model CategorySection {
-  id         String   @id @default(cuid())
+  id         String @id @default(cuid())
   categoryId String
   sectionId  String
-  order      Int      @default(0)
-  
-  category   Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  section    FieldSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  order      Int    @default(0)
+
+  category Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  section  FieldSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
   @@unique([categoryId, sectionId])
 }
 
 model MuseumPiece {
-  id             String   @id @default(cuid())
-  registryCode   String   @unique
-  categoryId     String
-  status         String   @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
-  registeredAt   DateTime @default(now())
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  createdBy      String?  // memberId
-  updatedBy      String?  // memberId
-  
-  category       Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  fieldValues    PieceFieldValue[]
-  media          PieceMedia[]
+  id           String   @id @default(cuid())
+  registryCode String   @unique
+  categoryId   String
+  status       String   @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
+  registeredAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  createdBy    String? // memberId
+  updatedBy    String? // memberId
+
+  category    Category          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  fieldValues PieceFieldValue[]
+  media       PieceMedia[]
 }
 
 model PieceFieldValue {
-  id         String   @id @default(cuid())
-  pieceId    String
-  fieldId    String
-  value      String   // Serialized value
-  
-  piece      MuseumPiece     @relation(fields: [pieceId], references: [id], onDelete: Cascade)
-  field      FieldDefinition @relation(fields: [fieldId], references: [id], onDelete: Restrict)
+  id      String @id @default(cuid())
+  pieceId String
+  fieldId String
+  value   String // Serialized value
+
+  piece MuseumPiece     @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  field FieldDefinition @relation(fields: [fieldId], references: [id], onDelete: Restrict)
 
   @@unique([pieceId, fieldId])
 }
@@ -204,12 +204,12 @@ model PieceMedia {
   id          String   @id @default(cuid())
   pieceId     String
   url         String
-  type        String   // IMAGE, FILE
+  type        String // IMAGE, FILE
   description String?
   order       Int      @default(0)
   createdAt   DateTime @default(now())
-  
-  piece       MuseumPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+
+  piece MuseumPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
 }
 
 model MuseumSettings {
@@ -224,20 +224,68 @@ model MuseumSettings {
 }
 
 model RegistrySequence {
-  id          String   @id @default(cuid())
-  year        Int
-  lastValue   Int      @default(0)
-  
+  id        String @id @default(cuid())
+  year      Int
+  lastValue Int    @default(0)
+
   @@unique([year])
 }
 
 model AuditLog {
-  id         String   @id @default(cuid())
-  userId     String?
-  action     String
-  entity     String
-  entityId   String
-  oldValue   String?  // JSON
-  newValue   String?  // JSON
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String
+  oldValue  String? // JSON
+  newValue  String? // JSON
+  createdAt DateTime @default(now())
+}
+
+model Exhibition {
+  id        String    @id @default(cuid())
+  name      String
+  theme     String?
+  location  String?
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String? // memberId
+
+  images ExhibitionImage[]
+}
+
+model ExhibitionImage {
+  id           String   @id @default(cuid())
+  exhibitionId String
+  url          String
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  exhibition Exhibition @relation(fields: [exhibitionId], references: [id], onDelete: Cascade)
+}
+
+model SpecialProject {
+  id          String   @id @default(cuid())
+  name        String
+  theme       String?
+  description String?
+  objective   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String? // memberId
+
+  images SpecialProjectImage[]
+}
+
+model SpecialProjectImage {
+  id        String   @id @default(cuid())
+  projectId String
+  url       String
+  caption   String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  project SpecialProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
