@@ -271,6 +271,7 @@ model SpecialProject {
   name        String
   theme       String?
   description String?
+  content     String? // JSON serialized blocks
   objective   String?
   isPublished Boolean  @default(false)
   createdAt   DateTime @default(now())

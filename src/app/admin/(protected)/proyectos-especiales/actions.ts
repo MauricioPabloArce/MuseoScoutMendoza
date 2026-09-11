@@ -71,6 +71,7 @@ export async function createSpecialProject(data: {
   name: string;
   theme?: string;
   description?: string;
+  content?: string;
   objective?: string;
   isPublished?: boolean;
   images: { url: string; caption?: string; order: number }[];
@@ -83,6 +84,7 @@ export async function createSpecialProject(data: {
         name: data.name,
         theme: data.theme || null,
         description: data.description || null,
+        content: data.content || null,
         objective: data.objective || null,
         isPublished: data.isPublished || false,
         createdBy: member.id,
@@ -108,6 +110,7 @@ export async function updateSpecialProject(id: string, data: {
   name: string;
   theme?: string;
   description?: string;
+  content?: string;
   objective?: string;
   isPublished?: boolean;
   images: { id?: string; url: string; caption?: string; order: number }[];
@@ -125,6 +128,7 @@ export async function updateSpecialProject(id: string, data: {
         name: data.name,
         theme: data.theme || null,
         description: data.description || null,
+        content: data.content || null,
         objective: data.objective || null,
         isPublished: data.isPublished,
         images: {

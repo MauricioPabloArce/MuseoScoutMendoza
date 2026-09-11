@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { createSpecialProject, updateSpecialProject, deleteSpecialProject, uploadProjectImage } from "@/app/admin/(protected)/proyectos-especiales/actions"
 import FileErrorModal from "./FileErrorModal"
-import { Plus, Edit2, Trash2, X, Image as ImageIcon, Sparkles, Eye, Target, FileText } from "lucide-react"
+import { Plus, Edit2, Trash2, X, Image as ImageIcon, Sparkles, Eye, Target, FileText, ArrowUp, ArrowDown, Type, Paperclip } from "lucide-react"
 
 // Función auxiliar para detectar si una URL es una imagen
 function isImage(url: string) {
@@ -22,10 +22,9 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
   // Form State
   const [name, setName] = useState("")
   const [theme, setTheme] = useState("")
-  const [description, setDescription] = useState("")
   const [objective, setObjective] = useState("")
   const [isPublished, setIsPublished] = useState(false)
-  const [images, setImages] = useState<{ url: string; caption: string; order: number }[]>([])
+  const [blocks, setBlocks] = useState<any[]>([])
   
   // Error Modal State
   const [showSizeError, setShowSizeError] = useState(false)
@@ -37,10 +36,31 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
     setCurrent(proj)
     setName(proj.name)
     setTheme(proj.theme || "")
-    setDescription(proj.description || "")
     setObjective(proj.objective || "")
     setIsPublished(proj.isPublished || false)
-    setImages(proj.images?.map((img: any) => ({ ...img, caption: img.caption || "" })) || [])
+    
+    // Parse existing content or migrate from description+images
+    if (proj.content) {
+      try {
+        setBlocks(JSON.parse(proj.content))
+      } catch (e) {
+        setBlocks([])
+      }
+    } else {
+      const migratedBlocks = []
+      if (proj.description) migratedBlocks.push({ id: Math.random().toString(), type: 'text', content: proj.description })
+      if (proj.images) {
+        proj.images.forEach((img: any) => {
+          migratedBlocks.push({
+            id: Math.random().toString(),
+            type: isImage(img.url) ? 'image' : 'document',
+            url: img.url,
+            caption: img.caption || ""
+          })
+        })
+      }
+      setBlocks(migratedBlocks)
+    }
     setIsEditing(true)
   }
 
@@ -48,22 +68,21 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
     setCurrent(null)
     setName("")
     setTheme("")
-    setDescription("")
     setObjective("")
     setIsPublished(false)
-    setImages([])
+    setBlocks([])
     setIsEditing(true)
   }
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Blocks Handlers
+  const addTextBlock = () => {
+    setBlocks([...blocks, { id: Math.random().toString(), type: 'text', content: '' }])
+  }
+
+  const handleFileUploadForBlock = async (e: React.ChangeEvent<HTMLInputElement>, insertIndex: number) => {
     const file = e.target.files?.[0]
     if (!file) return
     
-    if (images.length >= 15) {
-      toast.error("Máximo 15 imágenes permitidas")
-      return
-    }
-
     if (file.size > 5 * 1024 * 1024) {
       setShowSizeError(true)
       e.target.value = ""
@@ -80,23 +99,40 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
     if (res.error) {
       toast.error(res.error)
     } else if (res.url) {
-      setImages([...images, { url: res.url, caption: "", order: images.length }])
-      toast.success("Imagen subida")
+      const type = isImage(res.url) ? 'image' : 'document'
+      const newBlock = { id: Math.random().toString(), type, url: res.url, caption: "" }
+      
+      const newBlocks = [...blocks]
+      if (insertIndex === -1) {
+        newBlocks.push(newBlock)
+      } else {
+        newBlocks.splice(insertIndex, 0, newBlock)
+      }
+      setBlocks(newBlocks)
+      toast.success(type === 'image' ? "Imagen subida" : "Documento subido")
     }
     
-    // Reset input
     e.target.value = ""
   }
 
-  const handleImageChange = (index: number, field: 'url' | 'caption', value: string) => {
-    const newImages = [...images]
-    newImages[index][field] = value
-    setImages(newImages)
+  const updateBlock = (id: string, field: string, value: string) => {
+    setBlocks(blocks.map(b => b.id === id ? { ...b, [field]: value } : b))
   }
 
-  const handleRemoveImage = (index: number) => {
-    const newImages = images.filter((_, i) => i !== index)
-    setImages(newImages.map((img, i) => ({ ...img, order: i })))
+  const removeBlock = (id: string) => {
+    setBlocks(blocks.filter(b => b.id !== id))
+  }
+
+  const moveBlock = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return
+    if (direction === 'down' && index === blocks.length - 1) return
+    
+    const newBlocks = [...blocks]
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    const temp = newBlocks[index]
+    newBlocks[index] = newBlocks[targetIndex]
+    newBlocks[targetIndex] = temp
+    setBlocks(newBlocks)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,15 +143,23 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
     }
 
     setIsLoading(true)
-    const validImages = images.filter(i => i.url.trim() !== "")
+    
+    // Extract first text block as fallback description
+    const firstText = blocks.find(b => b.type === 'text')?.content || ""
+    
+    // Extract files as fallback images array
+    const validImages = blocks
+      .filter(b => (b.type === 'image' || b.type === 'document') && b.url?.trim() !== "")
+      .map((b, index) => ({ url: b.url, caption: b.caption || "", order: index }))
 
     const dataToSubmit = {
       name,
       theme,
-      description,
+      description: firstText, // fallback for older displays
+      content: JSON.stringify(blocks), // The new source of truth
       objective,
       isPublished,
-      images: validImages
+      images: validImages // fallback gallery
     }
 
     let res
@@ -169,8 +213,102 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
               <input type="text" value={theme} onChange={e => setTheme(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#31573c] focus:outline-none" placeholder="Temática general" />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-              <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#31573c] focus:outline-none min-h-[100px]" placeholder="Detalles del proyecto..." />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Contenido Dinámico del Proyecto</label>
+              
+              <div className="space-y-4">
+                {blocks.map((block, idx) => (
+                  <div key={block.id} className="relative bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm group">
+                    <div className="absolute -left-3 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-gray-200 rounded shadow-md p-1">
+                      <button type="button" onClick={() => moveBlock(idx, 'up')} disabled={idx === 0} className="p-1 hover:bg-gray-100 rounded text-gray-500 disabled:opacity-30">
+                        <ArrowUp size={14} />
+                      </button>
+                      <button type="button" onClick={() => moveBlock(idx, 'down')} disabled={idx === blocks.length - 1} className="p-1 hover:bg-gray-100 rounded text-gray-500 disabled:opacity-30">
+                        <ArrowDown size={14} />
+                      </button>
+                    </div>
+
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-2 text-sm font-bold text-gray-600 uppercase tracking-wider">
+                        {block.type === 'text' && <><Type size={16} /> Bloque de Texto</>}
+                        {block.type === 'image' && <><ImageIcon size={16} /> Imagen</>}
+                        {block.type === 'document' && <><FileText size={16} /> Documento Adjunto</>}
+                      </div>
+                      <button type="button" onClick={() => removeBlock(block.id)} className="text-red-500 hover:bg-red-100 p-1.5 rounded transition-colors">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+
+                    {block.type === 'text' ? (
+                      <textarea
+                        value={block.content || ""}
+                        onChange={e => updateBlock(block.id, 'content', e.target.value)}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#31573c] focus:outline-none min-h-[100px]"
+                        placeholder="Escribe el texto aquí..."
+                      />
+                    ) : (
+                      <div className="flex gap-4 items-start bg-white p-3 border border-gray-200 rounded-lg">
+                        <div className="w-24 h-24 bg-gray-100 rounded border border-gray-200 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                          {block.type === 'image' ? (
+                            block.url ? <img src={block.url} alt="" className="w-full h-full object-cover" /> : <ImageIcon size={24} className="text-gray-400" />
+                          ) : (
+                            <FileText size={32} className="text-[#0B69CA]" />
+                          )}
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <p className="text-sm text-gray-600 truncate border border-transparent p-2 bg-gray-50 rounded shadow-sm" title={block.url}>{block.url}</p>
+                          <input 
+                            type="text" 
+                            value={block.caption || ""} 
+                            onChange={e => updateBlock(block.id, 'caption', e.target.value)} 
+                            placeholder={block.type === 'image' ? "Pie de foto (opcional)" : "Título del documento"} 
+                            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#31573c] focus:outline-none text-sm" 
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex gap-2">
+                      <input 
+                        type="file" 
+                        id={`file-upload-mid-${idx}`} 
+                        className="hidden" 
+                        accept="image/*,application/pdf,.doc,.docx"
+                        onChange={(e) => handleFileUploadForBlock(e, idx + 1)}
+                      />
+                      <button type="button" onClick={() => { const b = [...blocks]; b.splice(idx + 1, 0, { id: Math.random().toString(), type: 'text', content: '' }); setBlocks(b) }} className="bg-white border border-gray-300 shadow-md text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1 hover:bg-gray-50">
+                        <Plus size={12} /> Texto
+                      </button>
+                      <button type="button" onClick={() => document.getElementById(`file-upload-mid-${idx}`)?.click()} className="bg-white border border-gray-300 shadow-md text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1 hover:bg-gray-50">
+                        <Plus size={12} /> Archivo
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {blocks.length === 0 && (
+                <div className="text-center py-10 bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl">
+                  <Sparkles size={32} className="mx-auto text-gray-400 mb-3" />
+                  <p className="text-gray-600 font-medium">Este proyecto está vacío.</p>
+                  <p className="text-sm text-gray-500 mb-6">Comienza a construirlo agregando un bloque de contenido.</p>
+                </div>
+              )}
+
+              <div className="mt-6 flex justify-center gap-4">
+                <input 
+                  type="file" 
+                  id="file-upload-end" 
+                  className="hidden" 
+                  accept="image/*,application/pdf,.doc,.docx"
+                  onChange={(e) => handleFileUploadForBlock(e, -1)}
+                />
+                <button type="button" onClick={addTextBlock} className="bg-white border-2 border-[#31573c] text-[#31573c] hover:bg-[#31573c] hover:text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2">
+                  <Type size={18} /> Agregar Párrafo
+                </button>
+                <button type="button" onClick={() => document.getElementById('file-upload-end')?.click()} className="bg-white border-2 border-[#0B69CA] text-[#0B69CA] hover:bg-[#0B69CA] hover:text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2">
+                  <Paperclip size={18} /> Agregar Archivo
+                </button>
+              </div>
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Objetivo</label>
@@ -191,48 +329,7 @@ export default function SpecialProjectsClient({ initialData }: { initialData: Sp
             </div>
           </div>
 
-          <div className="border-t pt-6">
-            <div className="flex justify-between items-center mb-4">
-              <label className="block text-sm font-medium text-gray-700">Imágenes y Archivos (Máximo 15, max 5MB)</label>
-              <div>
-                <input 
-                  type="file" 
-                  id="project-image-upload" 
-                  className="hidden" 
-                  accept="image/*,application/pdf,.doc,.docx"
-                  onChange={handleFileUpload}
-                />
-                <button type="button" onClick={() => document.getElementById('project-image-upload')?.click()} className="text-sm bg-[#31573c] hover:bg-[#25422d] text-white px-3 py-1.5 rounded flex items-center gap-2 transition-colors disabled:opacity-50" disabled={isLoading}>
-                  <Plus size={16} /> Subir Archivo
-                </button>
-              </div>
-            </div>
-            
-            {images.length === 0 ? (
-              <div className="text-center py-8 bg-gray-50 border-2 border-dashed border-gray-200 rounded text-gray-500 text-sm">
-                No hay archivos configurados. Puedes subir hasta 15 archivos o imágenes.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {images.map((img, idx) => (
-                  <div key={idx} className="flex gap-3 items-start p-3 border rounded bg-gray-50">
-                    <div className="w-20 h-20 bg-gray-200 rounded border shadow-sm flex-shrink-0 overflow-hidden flex items-center justify-center">
-                      {img.url ? (
-                        isImage(img.url) ? <img src={img.url} alt="" className="w-full h-full object-cover" /> : <FileText size={32} className="text-[#0B69CA]" />
-                      ) : <ImageIcon size={20} className="text-gray-400" />}
-                    </div>
-                    <div className="flex-1 space-y-2">
-                      <p className="text-sm text-gray-600 truncate border border-transparent p-2 bg-white rounded shadow-sm" title={img.url}>{img.url}</p>
-                      <input type="text" value={img.caption} onChange={e => handleImageChange(idx, 'caption', e.target.value)} placeholder="Descripción / Título del archivo (opcional)" className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#31573c] focus:outline-none text-sm" />
-                    </div>
-                    <button type="button" onClick={() => handleRemoveImage(idx)} className="p-2 text-red-500 hover:bg-red-100 rounded mt-0.5 transition-colors">
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+
 
           <div className="flex justify-end gap-3 pt-6 border-t mt-6">
             <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">
