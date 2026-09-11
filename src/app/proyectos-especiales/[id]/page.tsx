@@ -74,7 +74,7 @@ export default async function ProyectoEspecialDetail({ params }: { params: Promi
                 }
                 if (block.type === 'image') {
                   return (
-                    <div key={block.id} className="w-40 h-28 rounded-lg overflow-hidden shadow-md bg-gray-100 mx-auto">
+                    <div key={block.id} className="w-24 h-16 rounded-md overflow-hidden shadow-sm bg-gray-100 mx-auto">
                       <ImageLightbox src={block.url} alt={block.caption || `${proj.name} imagen`} caption={block.caption} />
                     </div>
                   )
@@ -140,7 +140,7 @@ export default async function ProyectoEspecialDetail({ params }: { params: Promi
                   {proj.images.filter((img: any) => isImage(img.url)).length > 0 && (
                     <div className="flex flex-wrap gap-3">
                       {proj.images.filter((img: any) => isImage(img.url)).map((img: any, i: number) => (
-                        <div key={img.id} className="w-28 h-20 rounded-lg overflow-hidden bg-gray-100 shadow-sm flex-shrink-0">
+                        <div key={img.id} className="w-20 h-14 rounded-md overflow-hidden bg-gray-100 shadow-sm flex-shrink-0">
                           <ImageLightbox src={img.url} alt={img.caption || `${proj.name} imagen ${i+1}`} caption={img.caption || undefined} />
                         </div>
                       ))}

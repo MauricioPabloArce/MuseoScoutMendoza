@@ -18,22 +18,19 @@ export default function ImageLightbox({
 
   return (
     <>
-      <div 
-        className={`relative group cursor-zoom-in ${className || ''}`}
-        onClick={() => setIsOpen(true)}
-      >
-        <img 
-          src={src} 
-          alt={alt}
-          className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 z-10">
-          <ZoomIn className="text-white drop-shadow-md" size={32} />
+      <div className={`flex flex-col cursor-zoom-in ${className || ''}`} onClick={() => setIsOpen(true)}>
+        <div className="relative group overflow-hidden">
+          <img 
+            src={src} 
+            alt={alt}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 z-10">
+            <ZoomIn className="text-white drop-shadow-md" size={22} />
+          </div>
         </div>
         {caption && (
-          <figcaption className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 pt-12 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-            <p className="text-sm md:text-base font-medium">{caption}</p>
-          </figcaption>
+          <p className="text-xs text-gray-500 mt-1 px-1 text-center leading-snug">{caption}</p>
         )}
       </div>
 
