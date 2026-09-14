@@ -14,8 +14,8 @@ async function checkAdminOrCollab() {
     where: { userId: session.user.id }
   })
   
-  // if (!member) throw new Error("Acceso denegado")
-  return member || { role: 'ADMIN' }
+  if (!member) throw new Error("Acceso denegado")
+  return member
 }
 
 // 1. Exportar Piezas
@@ -409,7 +409,7 @@ export async function executeImport(formData: FormData) {
       userId: member.userId,
       categoryId: categoryId,
       fileName: file.name,
-      recordsCount: successCount
+      createdRows: successCount
     }
   })
 
