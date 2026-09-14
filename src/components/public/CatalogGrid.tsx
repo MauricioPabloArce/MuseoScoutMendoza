@@ -132,7 +132,9 @@ export default function CatalogGrid({ pieces }: { pieces: any[] }) {
                   <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider mb-2">Ficha Museológica</h3>
                   {selectedPiece.fieldValues && selectedPiece.fieldValues.length > 0 ? (
                     <div className="grid grid-cols-1 gap-y-4">
-                      {selectedPiece.fieldValues.map((fv: any) => {
+                      {[...selectedPiece.fieldValues]
+                        .sort((a: any, b: any) => (a.field?.order || 0) - (b.field?.order || 0))
+                        .map((fv: any) => {
                         // Skip rendering titulo and imagen_principal in the table
                         const titleFieldId = getPieceTitle(selectedPiece).fieldId;
                         if (fv.field?.internalKey === 'imagen_principal' || fv.fieldId === titleFieldId) return null;
