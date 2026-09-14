@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronRight, ChevronDown, Folder, FolderOpen, PackageSearch, Plus, Edit2, Trash2, Archive, Search, Eye } from "lucide-react"
+import { ChevronRight, ChevronDown, Folder, FolderOpen, PackageSearch, Plus, Edit2, Edit, Trash2, Archive, Search, Eye, AlertTriangle, ShieldX } from "lucide-react"
 import Link from "next/link"
 import toast from "react-hot-toast"
 import { archivePiece, deletePiece } from "@/app/admin/(protected)/piezas/actions"
