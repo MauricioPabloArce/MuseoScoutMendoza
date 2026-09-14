@@ -7,11 +7,27 @@ export default function CatalogGrid({ pieces }: { pieces: any[] }) {
   const [selectedPiece, setSelectedPiece] = useState<any | null>(null)
 
   const getPieceTitle = (piece: any) => {
-    const fv = piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'nombre') ||
-               piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'nombre_pieza') ||
-               piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'titulo') ||
-               piece.fieldValues?.find((fv: any) => fv.value && fv.value.trim() !== '' && isNaN(Number(fv.value.trim())))
-    return { title: fv?.value || piece.registryCode || "Sin Título", fieldId: fv?.fieldId }
+    let fv = piece.fieldValues?.find((fv: any) => {
+      const key = fv.field?.internalKey?.toLowerCase() || '';
+      const name = fv.field?.name?.toLowerCase() || '';
+      return ['nombre', 'nombre_pieza', 'titulo', 'título'].includes(key) ||
+             ['nombre', 'nombre de la pieza', 'titulo', 'título'].includes(name);
+    });
+
+    if (!fv) {
+      fv = piece.fieldValues?.find((fv: any) => {
+        const name = fv.field?.name?.toLowerCase() || '';
+        return name.includes('nombre') || name.includes('titulo') || name.includes('título');
+      });
+    }
+
+    if (!fv) {
+      fv = piece.fieldValues?.find((fv: any) =>
+        fv.value && fv.value.trim() !== '' && isNaN(Number(fv.value.trim()))
+      );
+    }
+
+    return { title: fv?.value || piece.registryCode || "Sin Título", fieldId: fv?.fieldId };
   }
 
   const formatFieldValue = (fv: any) => {

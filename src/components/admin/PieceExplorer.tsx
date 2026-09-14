@@ -89,13 +89,26 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
   }
 
   const getPieceTitle = (piece: Piece) => {
-    const fv = piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'nombre') ||
-               piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'nombre_pieza') ||
-               piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'titulo') ||
-               // Último fallback: primer campo de texto (no numérico puro) con valor
-               piece.fieldValues?.find((fv: any) =>
-                 fv.value && fv.value.trim() !== '' && isNaN(Number(fv.value.trim()))
-               )
+    let fv = piece.fieldValues?.find((fv: any) => {
+      const key = fv.field?.internalKey?.toLowerCase() || '';
+      const name = fv.field?.name?.toLowerCase() || '';
+      return ['nombre', 'nombre_pieza', 'titulo', 'título'].includes(key) ||
+             ['nombre', 'nombre de la pieza', 'titulo', 'título'].includes(name);
+    });
+
+    if (!fv) {
+      fv = piece.fieldValues?.find((fv: any) => {
+        const name = fv.field?.name?.toLowerCase() || '';
+        return name.includes('nombre') || name.includes('titulo') || name.includes('título');
+      });
+    }
+
+    if (!fv) {
+      fv = piece.fieldValues?.find((fv: any) =>
+        fv.value && fv.value.trim() !== '' && isNaN(Number(fv.value.trim()))
+      );
+    }
+
     return fv?.value || piece.registryCode || "Sin nombre"
   }
 
