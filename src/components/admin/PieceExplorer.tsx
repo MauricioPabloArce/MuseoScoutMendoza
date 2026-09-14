@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronRight, ChevronDown, Folder, FolderOpen, PackageSearch, Plus, Edit, Trash2, AlertTriangle, ShieldX, Eye } from "lucide-react"
+import { ChevronRight, ChevronDown, Folder, FolderOpen, PackageSearch, Plus, Edit2, Trash2, Archive, Search, Eye } from "lucide-react"
 import Link from "next/link"
 import toast from "react-hot-toast"
 import { archivePiece, deletePiece } from "@/app/admin/(protected)/piezas/actions"
@@ -63,6 +63,7 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
 
   const [exportModalOpen, setExportModalOpen] = useState(false)
   const [importModalOpen, setImportModalOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
   
   const tree = buildTree(categories)
 
@@ -117,9 +118,18 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
     }
   }
 
-  const visiblePieces = selectedCategoryId 
+  let visiblePieces = selectedCategoryId 
     ? pieces.filter(p => p.categoryId === selectedCategoryId)
     : pieces
+
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase().trim()
+    visiblePieces = visiblePieces.filter(p => {
+      const title = getPieceTitle(p).toLowerCase()
+      const code = p.registryCode.toLowerCase()
+      return title.includes(q) || code.includes(q)
+    })
+  }
 
   const renderNode = (node: TreeNode, level = 0) => {
     const isExpanded = expanded.has(node.id)
@@ -219,6 +229,19 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
           )}
         </div>
         
+        <div className="bg-white border-b border-gray-200 px-4 py-2">
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <input 
+              type="text"
+              placeholder="Buscar pieza por código o nombre..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#1d4328] focus:border-[#1d4328]"
+            />
+          </div>
+        </div>
+
         <div className="overflow-y-auto flex-1 p-0">
           <table className="w-full text-left text-sm">
             <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 shadow-sm z-10">
