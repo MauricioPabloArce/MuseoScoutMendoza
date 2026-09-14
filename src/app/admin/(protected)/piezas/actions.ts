@@ -51,7 +51,7 @@ export async function getFieldsForCategory(categoryId: string) {
 }
 
 // Atomic generation of the registry code
-async function generateRegistryCode(categoryId: string): Promise<string> {
+export async function generateRegistryCode(categoryId: string): Promise<string> {
   const initialCategory = await prisma.category.findUnique({ where: { id: categoryId } })
   if (!initialCategory) throw new Error("Categoría no encontrada")
   

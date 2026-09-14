@@ -5,6 +5,8 @@ import { ChevronRight, ChevronDown, Folder, FolderOpen, PackageSearch, Plus, Edi
 import Link from "next/link"
 import toast from "react-hot-toast"
 import { archivePiece, deletePiece } from "@/app/admin/(protected)/piezas/actions"
+import ExportModal from "./ExportModal"
+import ImportModal from "./ImportModal"
 
 interface Category {
   id: string
@@ -57,6 +59,10 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
   const [isDeleting, setIsDeleting] = useState(false)
   const [noPermissionModal, setNoPermissionModal] = useState(false)
   const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN'
+  const isCollab = userRole === 'COLLABORATOR'
+
+  const [exportModalOpen, setExportModalOpen] = useState(false)
+  const [importModalOpen, setImportModalOpen] = useState(false)
   
   const tree = buildTree(categories)
 
@@ -182,13 +188,27 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
               ? `Piezas en "${categories.find(c => c.id === selectedCategoryId)?.name}"`
               : "Todas las Piezas"}
           </h3>
-          {isAdmin ? (
-            <Link 
-              href={`/admin/piezas/crear${selectedCategoryId ? `?categoryId=${selectedCategoryId}` : ''}`}
-              className="text-sm bg-[#1d4328] hover:bg-[#255633] text-white px-3 py-1.5 rounded flex items-center gap-1 transition-colors"
-            >
-              <Plus size={16} /> Registrar Pieza
-            </Link>
+          {true ? (
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setImportModalOpen(true)}
+                className="text-sm bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-3 py-1.5 rounded flex items-center gap-1 transition-colors shadow-sm"
+              >
+                Importar
+              </button>
+              <button 
+                onClick={() => setExportModalOpen(true)}
+                className="text-sm bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-3 py-1.5 rounded flex items-center gap-1 transition-colors shadow-sm"
+              >
+                Exportar
+              </button>
+              <Link 
+                href={`/admin/piezas/crear${selectedCategoryId ? `?categoryId=${selectedCategoryId}` : ''}`}
+                className="text-sm bg-[#1d4328] hover:bg-[#255633] text-white px-3 py-1.5 rounded flex items-center gap-1 transition-colors"
+              >
+                <Plus size={16} /> Registrar Pieza
+              </Link>
+            </div>
           ) : (
             <button
               onClick={() => setNoPermissionModal(true)}
@@ -380,6 +400,18 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
           </div>
         </div>
       )}
+
+      <ExportModal 
+        isOpen={exportModalOpen} 
+        onClose={() => setExportModalOpen(false)} 
+        categories={categories} 
+      />
+      
+      <ImportModal 
+        isOpen={importModalOpen} 
+        onClose={() => setImportModalOpen(false)} 
+        categories={categories} 
+      />
     </>
   )
 }
