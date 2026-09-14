@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { updatePiece, getFieldsForCategory, createPiece, uploadImage } from "@/app/admin/(protected)/piezas/actions"
+import DonorSelector from "./DonorSelector"
 import { Save, Loader2, ArrowLeft, Image as ImageIcon } from "lucide-react"
 import toast from "react-hot-toast"
 import FileErrorModal from "./FileErrorModal"
@@ -35,6 +36,7 @@ export default function PieceForm({
   
   const [categoryId, setCategoryId] = useState(initialData?.categoryId || initialCategoryId || "")
   const [status, setStatus] = useState(initialData?.status || "DRAFT")
+  const [donorId, setDonorId] = useState<string | null>(initialData?.donorId || null)
   
   const [fields, setFields] = useState<FieldDef[]>([])
   
@@ -117,12 +119,14 @@ export default function PieceForm({
       res = await updatePiece(initialData.id, {
         categoryId,
         status,
+        donorId,
         fields: finalFieldValues
       })
     } else {
       res = await createPiece({
         categoryId,
         status,
+        donorId,
         fields: finalFieldValues
       })
     }
@@ -203,8 +207,18 @@ export default function PieceForm({
                   {sectionName}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {sectionFields.map(field => (
-                    <div key={field.id} className={field.type === 'TEXTAREA' ? "col-span-2" : ""}>
+                  {sectionName.toLowerCase().includes('donante') ? (
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Seleccionar Donante *</label>
+                      <DonorSelector 
+                        value={donorId} 
+                        onChange={setDonorId} 
+                        initialDonor={initialData?.donor} 
+                      />
+                    </div>
+                  ) : (
+                    sectionFields.map(field => (
+                      <div key={field.id} className={field.type === 'TEXTAREA' ? "col-span-2" : ""}>
                       <label className="block text-sm font-medium text-gray-700 mb-1">{field.name}</label>
                       
                       {field.type === 'TEXTAREA' ? (
@@ -279,7 +293,7 @@ export default function PieceForm({
                         />
                       )}
                     </div>
-                  ))}
+                  )))}
                 </div>
               </div>
             ))

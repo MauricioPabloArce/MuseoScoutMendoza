@@ -6,21 +6,47 @@ import { auth } from "@/auth"
 import { validateDynamicFieldValue } from "@/lib/utils"
 
 
-export async function getPieces() {
-  return await prisma.museumPiece.findMany({
-    include: {
-      category: true,
-      fieldValues: {
-        include: { 
-          field: {
-            include: { options: true }
+export async function getPiecesPaginated(page = 1, pageSize = 20, categoryId?: string | null, statusFilter = "ALL", searchQuery = "") {
+  const where: any = {}
+  
+  if (categoryId) {
+    where.categoryId = categoryId
+  }
+  
+  if (statusFilter !== "ALL") {
+    where.status = statusFilter
+  }
+
+  if (searchQuery.trim()) {
+    where.OR = [
+      { registryCode: { contains: searchQuery } },
+      { fieldValues: { some: { value: { contains: searchQuery } } } }
+    ]
+  }
+
+  const [pieces, total] = await Promise.all([
+    prisma.museumPiece.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: {
+        category: true,
+        fieldValues: {
+          include: { 
+            field: {
+              include: { options: true }
+            }
           }
-        }
-      },
-      media: true
-    },
-    orderBy: { createdAt: 'desc' }
-  })
+        },
+        media: true,
+        donor: true
+      }
+    }),
+    prisma.museumPiece.count({ where })
+  ])
+
+  return { pieces, total, pages: Math.ceil(total / pageSize) }
 }
 
 export async function getFieldsForCategory(categoryId: string) {
@@ -142,6 +168,7 @@ async function checkUserPermission(userId: string, categoryId: string, action: '
 export async function createPiece(data: {
   categoryId: string
   status: string
+  donorId?: string | null
   fields: Record<string, string>
   mediaUrls?: string[]
 }) {
@@ -176,6 +203,7 @@ export async function createPiece(data: {
         categoryId: data.categoryId,
         registryCode,
         status: data.status,
+        donorId: data.donorId,
         createdBy: session.user.id,
         fieldValues: {
           create: Object.entries(data.fields).map(([fieldId, value]) => ({
@@ -206,6 +234,7 @@ export async function getPiece(id: string) {
     where: { id },
     include: {
       category: true,
+      donor: true,
       fieldValues: true,
       media: true
     }
@@ -215,6 +244,7 @@ export async function getPiece(id: string) {
 export async function updatePiece(id: string, data: {
   categoryId: string
   status: string
+  donorId?: string | null
   fields: Record<string, string>
   mediaUrls?: string[]
 }) {
@@ -252,6 +282,7 @@ export async function updatePiece(id: string, data: {
       data: {
         categoryId: data.categoryId,
         status: data.status,
+        donorId: data.donorId,
         updatedBy: session.user.id,
         fieldValues: {
           create: Object.entries(data.fields).map(([fieldId, value]) => ({

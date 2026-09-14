@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
-import { ChevronRight, ChevronDown, Folder, FolderOpen, PackageSearch, Plus, Edit2, Edit, Trash2, Archive, Search, Eye, AlertTriangle, ShieldX } from "lucide-react"
+import { useState, useEffect } from "react"
+import { ChevronRight, ChevronDown, Folder, FolderOpen, PackageSearch, Plus, Edit2, Edit, Trash2, Archive, Search, Eye, AlertTriangle, ShieldX, ChevronLeft } from "lucide-react"
 import Link from "next/link"
 import toast from "react-hot-toast"
-import { archivePiece, deletePiece, bulkUpdatePieceStatus } from "@/app/admin/(protected)/piezas/actions"
+import { archivePiece, deletePiece, bulkUpdatePieceStatus, getPiecesPaginated } from "@/app/admin/(protected)/piezas/actions"
 import ExportModal from "./ExportModal"
 import ImportModal from "./ImportModal"
+import { useDebounce } from "use-debounce"
 
 interface Category {
   id: string
@@ -45,14 +46,13 @@ function buildTree(categories: Category[]): TreeNode[] {
   return roots
 }
 
-export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' }: { categories: Category[], pieces: Piece[], userRole?: string }) {
+export default function PieceExplorer({ categories, pieces: initialPieces, userRole = 'VIEWER' }: { categories: Category[], pieces: Piece[], userRole?: string }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
   
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [pieceToDelete, setPieceToDelete] = useState<{id: string, title: string} | null>(null)
   
-  // Archive modal state
   const [archiveModalOpen, setArchiveModalOpen] = useState(false)
   const [pieceToArchive, setPieceToArchive] = useState<{id: string, title: string} | null>(null)
 
@@ -65,8 +65,16 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
 
   const [exportModalOpen, setExportModalOpen] = useState(false)
   const [importModalOpen, setImportModalOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
   
+  const [searchQuery, setSearchQuery] = useState("")
+  const [debouncedSearchQuery] = useDebounce(searchQuery, 500)
+  
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+  const [visiblePieces, setVisiblePieces] = useState<Piece[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
   const tree = buildTree(categories)
 
   const toggleExpand = (id: string) => {
@@ -75,6 +83,31 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
     else newExpanded.add(id)
     setExpanded(newExpanded)
   }
+
+  const fetchPieces = async () => {
+    setIsLoading(true)
+    try {
+      const res = await getPiecesPaginated(page, 20, selectedCategoryId, statusFilter, debouncedSearchQuery)
+      setVisiblePieces(res.pieces)
+      setTotalPages(res.pages)
+      setTotalItems(res.total)
+    } catch (e) {
+      console.error(e)
+      toast.error("Error al cargar las piezas")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Reload pieces when dependencies change
+  useEffect(() => {
+    fetchPieces()
+  }, [page, selectedCategoryId, statusFilter, debouncedSearchQuery])
+
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setPage(1)
+  }, [selectedCategoryId, statusFilter, debouncedSearchQuery])
 
   const handleArchiveConfirm = async () => {
     if (!pieceToArchive) return
@@ -85,6 +118,7 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
       toast.success("Pieza archivada")
       setArchiveModalOpen(false)
       setPieceToArchive(null)
+      fetchPieces()
     } else {
       toast.error(res.error || "Error")
     }
@@ -115,16 +149,23 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
     return rawTitle.replace(/\w\S*/g, (txt: string) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase())
   }
 
-  const handleBulkAction = async (status: string) => {
-    if (!selectedCategoryId) return
-    const statusText = status === 'PUBLISHED' ? 'publicar' : 'despublicar'
-    if (!window.confirm(`¿Estás seguro que deseas ${statusText} todas las piezas de esta categoría?`)) return
+  const [bulkModalOpen, setBulkModalOpen] = useState(false)
+  const [bulkStatusToApply, setBulkStatusToApply] = useState<string>('')
+
+  const handleBulkActionClick = (status: string) => {
+    setBulkStatusToApply(status)
+    setBulkModalOpen(true)
+  }
+
+  const handleBulkActionConfirm = async () => {
+    if (!selectedCategoryId || !bulkStatusToApply) return
     
     setIsBulking(true)
     try {
-      const res = await bulkUpdatePieceStatus(selectedCategoryId, status)
+      const res = await bulkUpdatePieceStatus(selectedCategoryId, bulkStatusToApply)
       if (res.success) {
         toast.success(`Se han ${status === 'PUBLISHED' ? 'publicado' : 'despublicado'} ${res.count} piezas`)
+        fetchPieces()
       } else {
         toast.error(res.error || "Error en la acción masiva")
       }
@@ -144,6 +185,7 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
         toast.success("Pieza eliminada correctamente")
         setDeleteModalOpen(false)
         setPieceToDelete(null)
+        fetchPieces()
       } else {
         toast.error(res.error || "Error al eliminar")
       }
@@ -152,23 +194,6 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
     } finally {
       setIsDeleting(false)
     }
-  }
-
-  let visiblePieces = selectedCategoryId 
-    ? pieces.filter(p => p.categoryId === selectedCategoryId)
-    : pieces
-
-  if (statusFilter !== "ALL") {
-    visiblePieces = visiblePieces.filter(p => p.status === statusFilter)
-  }
-
-  if (searchQuery.trim()) {
-    const q = searchQuery.toLowerCase().trim()
-    visiblePieces = visiblePieces.filter(p => {
-      const title = getPieceTitle(p).toLowerCase()
-      const code = p.registryCode.toLowerCase()
-      return title.includes(q) || code.includes(q)
-    })
   }
 
   const renderNode = (node: TreeNode, level = 0) => {
@@ -236,27 +261,28 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
           <h3 className="font-semibold text-gray-700">
             {selectedCategoryId 
               ? `Piezas en "${categories.find(c => c.id === selectedCategoryId)?.name}"`
-              : "Todas las Piezas"}
+              : "Todas las Piezas"} 
+            <span className="text-sm font-normal text-gray-500 ml-2">({totalItems})</span>
           </h3>
           {true ? (
             <div className="flex gap-2">
               {selectedCategoryId && (
-                <div className="flex gap-1 bg-gray-100 p-1 rounded border border-gray-200 mr-2">
+                <>
                   <button 
-                    onClick={() => handleBulkAction('PUBLISHED')}
+                    onClick={() => handleBulkActionClick('PUBLISHED')}
                     disabled={isBulking}
-                    className="text-xs bg-white hover:bg-gray-50 text-green-700 px-2 py-1 rounded shadow-sm border border-gray-300 disabled:opacity-50"
+                    className="text-sm bg-white hover:bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded flex items-center gap-1 transition-colors shadow-sm disabled:opacity-50"
                   >
                     Publicar Todas
                   </button>
                   <button 
-                    onClick={() => handleBulkAction('DRAFT')}
+                    onClick={() => handleBulkActionClick('DRAFT')}
                     disabled={isBulking}
-                    className="text-xs bg-white hover:bg-gray-50 text-orange-700 px-2 py-1 rounded shadow-sm border border-gray-300 disabled:opacity-50"
+                    className="text-sm bg-white hover:bg-orange-50 text-orange-700 border border-orange-200 px-3 py-1.5 rounded flex items-center gap-1 transition-colors shadow-sm disabled:opacity-50"
                   >
                     Despublicar Todas
                   </button>
-                </div>
+                </>
               )}
               <button 
                 onClick={() => setImportModalOpen(true)}
@@ -272,7 +298,7 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
               </button>
               <Link 
                 href={`/admin/piezas/crear${selectedCategoryId ? `?categoryId=${selectedCategoryId}` : ''}`}
-                className="text-sm bg-[#1d4328] hover:bg-[#255633] text-white px-3 py-1.5 rounded flex items-center gap-1 transition-colors"
+                className="text-sm bg-[#1d4328] hover:bg-[#255633] text-white border border-[#1d4328] px-3 py-1.5 rounded flex items-center gap-1 transition-colors shadow-sm"
               >
                 <Plus size={16} /> Registrar Pieza
               </Link>
@@ -310,7 +336,12 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
           </select>
         </div>
 
-        <div className="overflow-y-auto flex-1 p-0">
+        <div className="overflow-y-auto flex-1 p-0 relative">
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/60 z-20 flex items-center justify-center">
+              <div className="w-8 h-8 border-4 border-gray-200 border-t-[#31573c] rounded-full animate-spin"></div>
+            </div>
+          )}
           <table className="w-full text-left text-sm">
             <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 shadow-sm z-10">
               <tr>
@@ -321,7 +352,7 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {visiblePieces.filter(p => p.status !== 'ARCHIVED').map(piece => {
+              {visiblePieces.map(piece => {
                 const title = getPieceTitle(piece)
                 return (
                 <tr key={piece.id} className="hover:bg-gray-50">
@@ -363,7 +394,7 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
                 </tr>
               )})}
               
-              {visiblePieces.filter(p => p.status !== 'ARCHIVED').length === 0 && (
+              {!isLoading && visiblePieces.length === 0 && (
                 <tr>
                   <td colSpan={4} className="px-4 py-12 text-center text-gray-500">
                     No hay piezas registradas en esta vista.
@@ -373,6 +404,31 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="bg-gray-50 border-t border-gray-200 px-4 py-2 flex items-center justify-between">
+            <span className="text-sm text-gray-600">
+              Página {page} de {totalPages}
+            </span>
+            <div className="flex gap-2">
+              <button 
+                disabled={page === 1}
+                onClick={() => setPage(p => p - 1)}
+                className="p-1 border border-gray-300 rounded bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button 
+                disabled={page >= totalPages}
+                onClick={() => setPage(p => p + 1)}
+                className="p-1 border border-gray-300 rounded bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
     
@@ -486,6 +542,48 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
                 className="px-4 py-2 bg-[#1d4328] text-white rounded hover:bg-[#255633] text-sm font-medium"
               >
                 Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Modal */}
+      {bulkModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+              <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                <AlertTriangle className="text-blue-500" size={18} />
+                Confirmar Acción
+              </h3>
+              <button onClick={() => setBulkModalOpen(false)} className="text-gray-400 hover:text-gray-600">×</button>
+            </div>
+            
+            <div className="p-6">
+              <p className="text-gray-700">
+                ¿Estás seguro que deseas <strong>{bulkStatusToApply === 'PUBLISHED' ? 'publicar' : 'despublicar'}</strong> todas las piezas de esta categoría?
+              </p>
+            </div>
+
+            <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+              <button 
+                type="button" 
+                onClick={() => setBulkModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 rounded text-gray-700 bg-white hover:bg-gray-50 text-sm font-medium"
+              >
+                Cancelar
+              </button>
+              <button 
+                type="button"
+                onClick={() => {
+                  setBulkModalOpen(false)
+                  handleBulkActionConfirm()
+                }}
+                disabled={isBulking}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isBulking ? "Procesando..." : "Confirmar"}
               </button>
             </div>
           </div>

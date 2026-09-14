@@ -9,6 +9,7 @@ export default function SidebarNav() {
   const navItems = [
     { name: "Dashboard", href: "/admin" },
     { name: "Acervo (Piezas)", href: "/admin/piezas" },
+    { name: "Donantes", href: "/admin/donantes" },
     { name: "Categorías", href: "/admin/categorias" },
     { name: "Campos Dinámicos", href: "/admin/campos" },
     { name: "Muestras", href: "/admin/muestras" },

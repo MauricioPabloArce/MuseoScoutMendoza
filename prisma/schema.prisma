@@ -194,8 +194,10 @@ model MuseumPiece {
   updatedAt    DateTime @updatedAt
   createdBy    String? // memberId
   updatedBy    String? // memberId
+  donorId      String?
 
   category    Category          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  donor       Donor?            @relation(fields: [donorId], references: [id], onDelete: SetNull)
   fieldValues PieceFieldValue[]
   media       PieceMedia[]
 }
@@ -356,3 +358,22 @@ model ImportHistory {
   category     Category @relation(fields: [categoryId], references: [id])
   user         User     @relation(fields: [userId], references: [id])
 }
+
+model Donor {
+  id             String        @id @default(cuid())
+  displayName    String
+  firstName      String?
+  lastName       String?
+  email          String?
+  phone          String?
+  notes          String?
+  active         Boolean       @default(true)
+  normalizedName String?       // Search vector field
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  createdBy      String?       // memberId
+  updatedBy      String?       // memberId
+
+  pieces         MuseumPiece[]
+}
+
