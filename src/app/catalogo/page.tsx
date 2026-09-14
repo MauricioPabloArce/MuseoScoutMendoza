@@ -83,7 +83,13 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Pro
   let pieces = await prisma.museumPiece.findMany({
     where: whereClause,
     include: { 
-      category: true, 
+      category: {
+        include: {
+          sections: {
+            orderBy: { order: 'asc' }
+          }
+        }
+      }, 
       media: true,
       fieldValues: {
         include: { 

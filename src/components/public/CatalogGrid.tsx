@@ -132,23 +132,38 @@ export default function CatalogGrid({ pieces }: { pieces: any[] }) {
                   <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider mb-2">Ficha Museológica</h3>
                   {selectedPiece.fieldValues && selectedPiece.fieldValues.length > 0 ? (
                     <div className="grid grid-cols-1 gap-y-4">
-                      {[...selectedPiece.fieldValues]
-                        .sort((a: any, b: any) => (a.field?.order || 0) - (b.field?.order || 0))
-                        .map((fv: any) => {
-                        // Skip rendering titulo and imagen_principal in the table
-                        const titleFieldId = getPieceTitle(selectedPiece).fieldId;
-                        if (fv.field?.internalKey === 'imagen_principal' || fv.fieldId === titleFieldId) return null;
-                        
-                        return (
-                        <div key={fv.id} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                          <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                            {fv.field?.name || "Desconocido"}
-                          </span>
-                          <span className="text-gray-800 break-words">
-                            {formatFieldValue(fv)}
-                          </span>
-                        </div>
-                      )})}
+                      {(function() {
+                        const sectionOrderMap = new Map<string, number>()
+                        if (selectedPiece.category?.sections) {
+                          selectedPiece.category.sections.forEach((cs: any, index: number) => {
+                            sectionOrderMap.set(cs.sectionId, index)
+                          })
+                        }
+
+                        const sortedFieldValues = [...selectedPiece.fieldValues].sort((a: any, b: any) => {
+                          const sectionA = a.field.sectionId ? (sectionOrderMap.get(a.field.sectionId) ?? 999) : 999
+                          const sectionB = b.field.sectionId ? (sectionOrderMap.get(b.field.sectionId) ?? 999) : 999
+                          
+                          if (sectionA !== sectionB) return sectionA - sectionB
+                          return (a.field.order || 0) - (b.field.order || 0)
+                        })
+
+                        return sortedFieldValues.map((fv: any) => {
+                          const titleFieldId = getPieceTitle(selectedPiece).fieldId;
+                          if (fv.field?.internalKey === 'imagen_principal' || fv.fieldId === titleFieldId) return null;
+                          
+                          return (
+                            <div key={fv.id} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                              <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                                {fv.field?.name || "Desconocido"}
+                              </span>
+                              <span className="text-gray-800 break-words">
+                                {formatFieldValue(fv)}
+                              </span>
+                            </div>
+                          )
+                        })
+                      })()}
                     </div>
                   ) : (
                     <p className="text-gray-500 text-sm italic">No hay datos adicionales registrados.</p>
