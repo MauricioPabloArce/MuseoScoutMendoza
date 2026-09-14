@@ -3,6 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, Compass, Calendar, Tag, Info } from "lucide-react"
 import Footer from "@/components/public/Footer"
+import { auth } from "@/auth"
 
 /** Convierte el valor almacenado al texto visible según el tipo de campo */
 function formatFieldValue(fv: any): string {
@@ -48,7 +49,14 @@ export default async function PieceDetailPage({ params }: { params: Promise<{ re
     }
   })
 
-  if (!piece || piece.status !== 'PUBLISHED') {
+  const session = await auth()
+  const isPreviewAuthorized = !!session?.user
+
+  if (!piece) {
+    notFound()
+  }
+
+  if (piece.status !== 'PUBLISHED' && !isPreviewAuthorized) {
     notFound()
   }
 
