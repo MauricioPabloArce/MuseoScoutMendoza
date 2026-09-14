@@ -73,8 +73,18 @@ export default function PieceForm({
     })
   }, [categoryId])
 
-  const handleFieldChange = (id: string, val: string) => {
-    setFieldValues(prev => ({ ...prev, [id]: val }))
+  const handleFieldChange = (field: any, val: string) => {
+    let formattedVal = val;
+    
+    // Auto-format "Nombre" or "Título" fields to Title Case
+    const name = field.name?.toLowerCase() || '';
+    if (field.type === 'TEXT' && (name.includes('nombre') || name.includes('titulo') || name.includes('título'))) {
+      formattedVal = val.replace(/[\w\u00C0-\u017F]+/g, function(txt) {
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+      });
+    }
+    
+    setFieldValues(prev => ({ ...prev, [field.id]: formattedVal }))
   }
 
   const handleSave = async (e: React.FormEvent) => {
@@ -201,13 +211,13 @@ export default function PieceForm({
                         <textarea 
                           className="w-full border border-gray-300 rounded p-2 min-h-[100px]"
                           value={fieldValues[field.id] || ""}
-                          onChange={e => handleFieldChange(field.id, e.target.value)}
+                          onChange={e => handleFieldChange(field, e.target.value)}
                         />
                       ) : field.type === 'SELECT' ? (
                         <select 
                           className="w-full border border-gray-300 rounded p-2"
                           value={fieldValues[field.id] || ""}
-                          onChange={e => handleFieldChange(field.id, e.target.value)}
+                          onChange={e => handleFieldChange(field, e.target.value)}
                         >
                           <option value="">Seleccionar...</option>
                           {[...field.options].sort((a: any, b: any) => a.label.localeCompare(b.label, 'es', { sensitivity: 'base' })).map((opt: any) => (
@@ -245,7 +255,7 @@ export default function PieceForm({
                         <div className="flex items-center gap-3 h-10">
                           <button
                             type="button"
-                            onClick={() => handleFieldChange(field.id, fieldValues[field.id] === 'true' ? 'false' : 'true')}
+                            onClick={() => handleFieldChange(field, fieldValues[field.id] === 'true' ? 'false' : 'true')}
                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                               fieldValues[field.id] === 'true' ? 'bg-[#31573c]' : 'bg-gray-300'
                             }`}
@@ -265,7 +275,7 @@ export default function PieceForm({
                           type={field.type === 'NUMBER' ? 'number' : field.type === 'DATE' ? 'date' : 'text'}
                           className="w-full border border-gray-300 rounded p-2"
                           value={fieldValues[field.id] || ""}
-                          onChange={e => handleFieldChange(field.id, e.target.value)}
+                          onChange={e => handleFieldChange(field, e.target.value)}
                         />
                       )}
                     </div>
