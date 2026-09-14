@@ -42,8 +42,14 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Pro
   
   if (q) {
     whereClause.OR = [
-      { title: { contains: q } },
-      { registryCode: { contains: q } }
+      { registryCode: { contains: q } },
+      {
+        fieldValues: {
+          some: {
+            value: { contains: q }
+          }
+        }
+      }
     ];
   }
 
