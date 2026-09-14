@@ -34,7 +34,13 @@ export default async function PieceDetailPage({ params }: { params: Promise<{ re
   const piece = await prisma.museumPiece.findUnique({
     where: { registryCode: resolvedParams.registryCode },
     include: {
-      category: true,
+      category: {
+        include: {
+          sections: {
+            orderBy: { order: 'asc' }
+          }
+        }
+      },
       media: true,
       fieldValues: {
         include: {
@@ -161,20 +167,35 @@ export default async function PieceDetailPage({ params }: { params: Promise<{ re
               </div>
 
               {Object.entries(
-                piece.fieldValues
-                  .filter((fv: any) => 
-                    fv.value && 
-                    fv.value.trim() !== '' && 
-                    fv.field?.name &&
-                    fv.id !== titleField?.id && 
-                    fv.id !== imageField?.id
-                  )
-                  .reduce((acc: Record<string, any[]>, fv: any) => {
-                    const sectionName = fv.field.section?.name || (fv.field.isGeneral ? 'Datos generales' : 'Datos específicos')
-                    if (!acc[sectionName]) acc[sectionName] = []
-                    acc[sectionName].push(fv)
-                    return acc
-                  }, {})
+                (function() {
+                  const sectionOrderMap = new Map<string, number>()
+                  piece.category.sections.forEach((cs: any, index: number) => {
+                    sectionOrderMap.set(cs.sectionId, index)
+                  })
+
+                  const sortedFieldValues = [...piece.fieldValues].sort((a: any, b: any) => {
+                    const sectionA = a.field.sectionId ? (sectionOrderMap.get(a.field.sectionId) ?? 999) : 999
+                    const sectionB = b.field.sectionId ? (sectionOrderMap.get(b.field.sectionId) ?? 999) : 999
+                    
+                    if (sectionA !== sectionB) return sectionA - sectionB
+                    return (a.field.order || 0) - (b.field.order || 0)
+                  })
+
+                  return sortedFieldValues
+                    .filter((fv: any) => 
+                      fv.value && 
+                      fv.value.trim() !== '' && 
+                      fv.field?.name &&
+                      fv.id !== titleField?.id && 
+                      fv.id !== imageField?.id
+                    )
+                    .reduce((acc: Record<string, any[]>, fv: any) => {
+                      const sectionName = fv.field.section?.name || (fv.field.isGeneral ? 'Datos generales' : 'Datos específicos')
+                      if (!acc[sectionName]) acc[sectionName] = []
+                      acc[sectionName].push(fv)
+                      return acc
+                    }, {})
+                })()
               ).map(([sectionName, values]) => (
                 <div key={sectionName} className="mb-6">
                   {/* Encabezado de sección */}
