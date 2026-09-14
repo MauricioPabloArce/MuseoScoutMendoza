@@ -210,7 +210,7 @@ export default function PieceForm({
                           onChange={e => handleFieldChange(field.id, e.target.value)}
                         >
                           <option value="">Seleccionar...</option>
-                          {field.options.map((opt: any) => (
+                          {[...field.options].sort((a: any, b: any) => a.label.localeCompare(b.label, 'es', { sensitivity: 'base' })).map((opt: any) => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                           ))}
                         </select>
