@@ -4,27 +4,46 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Search, X, Loader2 } from "lucide-react"
 import { useState, useEffect, useTransition } from "react"
 
-export default function CatalogFilters({ initialQ }: { initialQ?: string }) {
+export default function CatalogFilters({ 
+  initialQ, 
+  categoryFields = [], 
+  currentSort = "recent",
+  searchParams = {} 
+}: { 
+  initialQ?: string, 
+  categoryFields?: any[],
+  currentSort?: string,
+  searchParams?: any
+}) {
   const router = useRouter()
   const pathname = usePathname()
-  const searchParams = useSearchParams()
+  const searchParamsObj = useSearchParams()
   const [isPending, startTransition] = useTransition()
   
   const [q, setQ] = useState(initialQ || "")
   
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (q !== (searchParams.get("q") || "")) {
+      if (q !== (searchParamsObj.get("q") || "")) {
         updateFilters(q)
       }
     }, 400)
     return () => clearTimeout(timer)
-  }, [q, searchParams])
+  }, [q, searchParamsObj])
   
-  const updateFilters = (newQ: string) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (newQ) params.set("q", newQ)
-    else params.delete("q")
+  const updateFilters = (newQ: string, customParams?: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParamsObj.toString())
+    if (newQ !== undefined) {
+      if (newQ) params.set("q", newQ)
+      else params.delete("q")
+    }
+
+    if (customParams) {
+      Object.entries(customParams).forEach(([k, v]) => {
+        if (v === null || v === "") params.delete(k)
+        else params.set(k, v)
+      })
+    }
     
     startTransition(() => {
       router.replace(`${pathname}?${params.toString()}`, { scroll: false })
@@ -43,6 +62,7 @@ export default function CatalogFilters({ initialQ }: { initialQ?: string }) {
             type="text" 
             value={q}
             onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && updateFilters(q)}
             placeholder="Buscar piezas por título, código o palabras clave..." 
             className="w-full bg-transparent py-3 px-4 text-gray-800 outline-none text-base placeholder-gray-400" 
           />
@@ -60,15 +80,66 @@ export default function CatalogFilters({ initialQ }: { initialQ?: string }) {
         </button>
       </div>
 
+      {/* Dynamic Filters & Order */}
+      <div className="flex flex-wrap gap-4 items-center">
+        {/* Sort Select */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700">Ordenar por:</span>
+          <select 
+            className="border border-gray-300 rounded-lg text-sm px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-[#1d4328] focus:border-[#1d4328]"
+            value={currentSort}
+            onChange={(e) => updateFilters(q, { sort: e.target.value })}
+          >
+            <option value="recent">Más recientes</option>
+            <option value="name_asc">Nombre (A-Z)</option>
+            <option value="name_desc">Nombre (Z-A)</option>
+            <option value="code_asc">Código / N° Inv (A-Z)</option>
+            <option value="code_desc">Código / N° Inv (Z-A)</option>
+            {categoryFields.filter(f => f.type === 'NUMBER' || f.type === 'TEXT').map(f => (
+              <option key={f.id} value={`field_${f.id}`}>{f.name} (Ascendente)</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Dynamic Select Filters */}
+        {categoryFields.filter(f => f.type === 'SELECT' || f.type === 'MULTISELECT').map(f => {
+          const paramKey = `field_${f.id}`;
+          const currentVal = searchParams[paramKey] || "";
+          
+          return (
+            <div key={f.id} className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">{f.name}:</span>
+              <select 
+                className="border border-gray-300 rounded-lg text-sm px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-[#1d4328] focus:border-[#1d4328] max-w-[200px]"
+                value={currentVal}
+                onChange={(e) => updateFilters(q, { [paramKey]: e.target.value })}
+              >
+                <option value="">Todos</option>
+                {[...(f.options || [])]
+                  .sort((a, b) => a.label.localeCompare(b.label, 'es', { sensitivity: 'base' }))
+                  .map((opt: any) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          )
+        })}
+      </div>
+
       {/* Filter Status for Mobile / Clear All */}
-      {searchParams.has("q") && (
+      {(searchParamsObj.has("q") || Object.keys(searchParams).some(k => k.startsWith('field_'))) && (
         <div className="flex items-center gap-2 px-2 text-sm text-gray-600">
-          <span>Resultados para: <strong>"{searchParams.get("q")}"</strong></span>
+          <span>Filtros activos</span>
           <button 
-            onClick={() => { setQ(""); updateFilters("") }}
+            onClick={() => { 
+              setQ(""); 
+              const clearParams: Record<string, string | null> = {};
+              Object.keys(searchParams).filter(k => k.startsWith('field_')).forEach(k => clearParams[k] = null);
+              updateFilters("", clearParams) 
+            }}
             className="text-red-500 hover:underline font-medium text-xs ml-4"
           >
-            Limpiar búsqueda
+            Limpiar filtros
           </button>
         </div>
       )}

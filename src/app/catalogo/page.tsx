@@ -7,6 +7,7 @@ import CatalogFilters from "@/components/public/CatalogFilters"
 import CatalogGrid from "@/components/public/CatalogGrid"
 import CategorySidebar from "@/components/public/CategorySidebar"
 import SafeImage from "@/components/public/SafeImage"
+import { getFieldsForCategory } from "@/app/admin/(protected)/piezas/actions"
 
 export const dynamic = 'force-dynamic'
 
@@ -34,28 +35,53 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Pro
     }, [] as string[])
   }
 
+  // Fetch dynamic fields for the selected category
+  let dynamicFields: any[] = []
+  if (categoria) {
+    dynamicFields = await getFieldsForCategory(categoria)
+  }
+
+  // Generate dynamic where clause for fieldValues
+  const dynamicFilters = Object.keys(resolvedParams).filter(k => k.startsWith('field_'))
+  const fieldFilters = dynamicFilters.map(k => ({
+    fieldValues: {
+      some: {
+        fieldId: k.replace('field_', ''),
+        value: resolvedParams[k] as string
+      }
+    }
+  }))
+
   const whereClause: any = { status: 'PUBLISHED' };
   if (categoria) {
     const descendantIds = getDescendantIds(categoria)
     whereClause.categoryId = { in: [categoria, ...descendantIds] }
   }
   
+  const searchConditions = []
   if (q) {
-    whereClause.OR = [
-      { registryCode: { contains: q } },
-      {
-        fieldValues: {
-          some: {
-            value: { contains: q }
+    searchConditions.push({
+      OR: [
+        { registryCode: { contains: q } },
+        {
+          fieldValues: {
+            some: {
+              value: { contains: q }
+            }
           }
         }
-      }
-    ];
+      ]
+    })
   }
 
-  const pieces = await prisma.museumPiece.findMany({
+  if (fieldFilters.length > 0 || searchConditions.length > 0) {
+    whereClause.AND = [...searchConditions, ...fieldFilters]
+  }
+
+  const sortBy = typeof resolvedParams.sort === 'string' ? resolvedParams.sort : 'recent';
+
+  let pieces = await prisma.museumPiece.findMany({
     where: whereClause,
-    orderBy: { registeredAt: 'desc' },
     include: { 
       category: true, 
       media: true,
@@ -68,6 +94,55 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Pro
       }
     }
   })
+
+  // Extract piece title logic for sorting
+  const getPieceTitleString = (piece: any) => {
+    let fv = piece.fieldValues?.find((fv: any) => {
+      const key = fv.field?.internalKey?.toLowerCase() || '';
+      const name = fv.field?.name?.toLowerCase() || '';
+      return ['nombre', 'nombre_pieza', 'titulo', 'título'].includes(key) ||
+             ['nombre', 'nombre de la pieza', 'titulo', 'título'].includes(name);
+    });
+
+    if (!fv) {
+      fv = piece.fieldValues?.find((fv: any) => {
+        const name = fv.field?.name?.toLowerCase() || '';
+        return name.includes('nombre') || name.includes('titulo') || name.includes('título');
+      });
+    }
+
+    if (!fv) {
+      fv = piece.fieldValues?.find((fv: any) =>
+        fv.value && fv.value.trim() !== '' && isNaN(Number(fv.value.trim()))
+      );
+    }
+    
+    return fv?.value || piece.registryCode || "Sin Título"
+  }
+
+  // Apply JS sorting
+  if (sortBy === 'name_asc') {
+    pieces.sort((a, b) => getPieceTitleString(a).localeCompare(getPieceTitleString(b), 'es', { sensitivity: 'base' }))
+  } else if (sortBy === 'name_desc') {
+    pieces.sort((a, b) => getPieceTitleString(b).localeCompare(getPieceTitleString(a), 'es', { sensitivity: 'base' }))
+  } else if (sortBy === 'code_asc') {
+    pieces.sort((a, b) => a.registryCode.localeCompare(b.registryCode))
+  } else if (sortBy === 'code_desc') {
+    pieces.sort((a, b) => b.registryCode.localeCompare(a.registryCode))
+  } else if (sortBy.startsWith('field_')) {
+    const fieldId = sortBy.replace('field_', '')
+    pieces.sort((a, b) => {
+      const valA = a.fieldValues?.find((fv: any) => fv.fieldId === fieldId)?.value || ''
+      const valB = b.fieldValues?.find((fv: any) => fv.fieldId === fieldId)?.value || ''
+      const numA = Number(valA)
+      const numB = Number(valB)
+      if (!isNaN(numA) && !isNaN(numB)) return numA - numB
+      return valA.localeCompare(valB, 'es', { sensitivity: 'base' })
+    })
+  } else {
+    // Default to recent
+    pieces.sort((a, b) => new Date(b.registeredAt).getTime() - new Date(a.registeredAt).getTime())
+  }
 
   // Get active category name for breadcrumb/title
   const activeCategory = categoria ? allCategories.find(c => c.id === categoria) : null;
@@ -84,7 +159,7 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Pro
       <main className="flex-1 w-full max-w-[1400px] mx-auto py-8 px-4 sm:px-6 lg:px-8">
         
         {/* Top Search Bar */}
-        <CatalogFilters initialQ={q} />
+        <CatalogFilters initialQ={q} categoryFields={dynamicFields} currentSort={sortBy} searchParams={resolvedParams} />
 
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           
