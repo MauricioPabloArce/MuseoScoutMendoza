@@ -4,7 +4,7 @@ import { useState } from "react"
 import { ChevronRight, ChevronDown, Folder, FolderOpen, PackageSearch, Plus, Edit2, Edit, Trash2, Archive, Search, Eye, AlertTriangle, ShieldX } from "lucide-react"
 import Link from "next/link"
 import toast from "react-hot-toast"
-import { archivePiece, deletePiece } from "@/app/admin/(protected)/piezas/actions"
+import { archivePiece, deletePiece, bulkUpdatePieceStatus } from "@/app/admin/(protected)/piezas/actions"
 import ExportModal from "./ExportModal"
 import ImportModal from "./ImportModal"
 
@@ -58,6 +58,8 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
 
   const [isDeleting, setIsDeleting] = useState(false)
   const [noPermissionModal, setNoPermissionModal] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<string>("ALL")
+  const [isBulking, setIsBulking] = useState(false)
   const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN'
   const isCollab = userRole === 'COLLABORATOR'
 
@@ -113,6 +115,26 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
     return rawTitle.replace(/\w\S*/g, (txt: string) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase())
   }
 
+  const handleBulkAction = async (status: string) => {
+    if (!selectedCategoryId) return
+    const statusText = status === 'PUBLISHED' ? 'publicar' : 'despublicar'
+    if (!window.confirm(`¿Estás seguro que deseas ${statusText} todas las piezas de esta categoría?`)) return
+    
+    setIsBulking(true)
+    try {
+      const res = await bulkUpdatePieceStatus(selectedCategoryId, status)
+      if (res.success) {
+        toast.success(`Se han ${status === 'PUBLISHED' ? 'publicado' : 'despublicado'} ${res.count} piezas`)
+      } else {
+        toast.error(res.error || "Error en la acción masiva")
+      }
+    } catch {
+      toast.error("Error inesperado en la acción masiva")
+    } finally {
+      setIsBulking(false)
+    }
+  }
+
   const handleDeleteConfirm = async () => {
     if (!pieceToDelete) return
     setIsDeleting(true)
@@ -135,6 +157,10 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
   let visiblePieces = selectedCategoryId 
     ? pieces.filter(p => p.categoryId === selectedCategoryId)
     : pieces
+
+  if (statusFilter !== "ALL") {
+    visiblePieces = visiblePieces.filter(p => p.status === statusFilter)
+  }
 
   if (searchQuery.trim()) {
     const q = searchQuery.toLowerCase().trim()
@@ -214,6 +240,24 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
           </h3>
           {true ? (
             <div className="flex gap-2">
+              {selectedCategoryId && (
+                <div className="flex gap-1 bg-gray-100 p-1 rounded border border-gray-200 mr-2">
+                  <button 
+                    onClick={() => handleBulkAction('PUBLISHED')}
+                    disabled={isBulking}
+                    className="text-xs bg-white hover:bg-gray-50 text-green-700 px-2 py-1 rounded shadow-sm border border-gray-300 disabled:opacity-50"
+                  >
+                    Publicar Todas
+                  </button>
+                  <button 
+                    onClick={() => handleBulkAction('DRAFT')}
+                    disabled={isBulking}
+                    className="text-xs bg-white hover:bg-gray-50 text-orange-700 px-2 py-1 rounded shadow-sm border border-gray-300 disabled:opacity-50"
+                  >
+                    Despublicar Todas
+                  </button>
+                </div>
+              )}
               <button 
                 onClick={() => setImportModalOpen(true)}
                 className="text-sm bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-3 py-1.5 rounded flex items-center gap-1 transition-colors shadow-sm"
@@ -243,8 +287,8 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
           )}
         </div>
         
-        <div className="bg-white border-b border-gray-200 px-4 py-2">
-          <div className="relative">
+        <div className="bg-white border-b border-gray-200 px-4 py-2 flex gap-3">
+          <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input 
               type="text"
@@ -254,6 +298,16 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
               className="w-full pl-9 pr-4 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#1d4328] focus:border-[#1d4328]"
             />
           </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-48 border border-gray-300 rounded text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#1d4328] focus:border-[#1d4328]"
+          >
+            <option value="ALL">Todos los estados</option>
+            <option value="PUBLISHED">Publicado</option>
+            <option value="DRAFT">Borrador</option>
+            <option value="ARCHIVED">Archivado</option>
+          </select>
         </div>
 
         <div className="overflow-y-auto flex-1 p-0">

@@ -328,3 +328,25 @@ export async function deletePiece(id: string) {
     return { success: false, error: "Error al eliminar la pieza: " + (error.message || "Error desconocido") }
   }
 }
+
+export async function bulkUpdatePieceStatus(categoryId: string, status: string) {
+  const session = await auth()
+  if (!session?.user?.id) throw new Error("No autorizado")
+
+  try {
+    const hasPerm = await checkUserPermission(session.user.id, categoryId, 'edit')
+    if (!hasPerm) return { success: false, error: "No tienes permisos para editar piezas en esta categoría." }
+
+    const res = await prisma.museumPiece.updateMany({
+      where: { categoryId },
+      data: { status }
+    })
+    
+    revalidatePath("/admin/piezas")
+    revalidatePath("/catalogo")
+    return { success: true, count: res.count }
+  } catch (error: any) {
+    console.error("Error en bulkUpdatePieceStatus:", error)
+    return { success: false, error: "Error al actualizar las piezas: " + (error.message || "Error desconocido") }
+  }
+}
