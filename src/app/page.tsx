@@ -32,7 +32,7 @@ export default async function HomePage() {
             Museo Scout Mendoza "Hno Gris Cayetano Ponso"
           </h2>
           <p className="text-lg md:text-xl mb-10 text-gray-300 max-w-2xl mx-auto font-medium">
-            Nuestro principal objetivo es preservar el acervo histórico de los Scouts de Mendoza, Argentina y el Mundo. ¡Siempre Listos!
+            Somos una entidad abierta al público orientada a la investigación, adquisición, conservación y comunicación del patrimonio histórico del Movimiento Scout. Inspirados en los principios del ICOM, servimos a la comunidad scout y a la sociedad toda, fortaleciendo la identidad de los jóvenes y propiciando un espacio de aprendizaje, estudio y disfrute.
           </p>
           
           <div className="flex flex-wrap justify-center gap-4 text-sm md:text-base text-gray-200 mt-8 mb-4">

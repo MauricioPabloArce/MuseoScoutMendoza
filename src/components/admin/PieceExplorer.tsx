@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronRight, ChevronDown, Folder, FolderOpen, PackageSearch, Plus, Edit, Trash2, AlertTriangle, ShieldX } from "lucide-react"
+import { ChevronRight, ChevronDown, Folder, FolderOpen, PackageSearch, Plus, Edit, Trash2, AlertTriangle, ShieldX, Eye } from "lucide-react"
 import Link from "next/link"
 import toast from "react-hot-toast"
 import { archivePiece, deletePiece } from "@/app/admin/(protected)/piezas/actions"
@@ -222,6 +222,14 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-2">
+                      <Link 
+                        href={`/catalogo/${piece.registryCode}`}
+                        target="_blank"
+                        className="p-1.5 text-gray-400 hover:text-green-600 bg-white border border-gray-200 rounded shadow-sm"
+                        title="Ver en el catálogo"
+                      >
+                        <Eye size={16} />
+                      </Link>
                       <Link 
                         href={`/admin/piezas/${piece.id}/editar`}
                         className="p-1.5 text-gray-400 hover:text-blue-600 bg-white border border-gray-200 rounded shadow-sm"
