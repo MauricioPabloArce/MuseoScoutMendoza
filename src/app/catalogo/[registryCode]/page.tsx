@@ -60,13 +60,29 @@ export default async function PieceDetailPage({ params }: { params: Promise<{ re
     notFound()
   }
 
-  // Prioridad: campo 'nombre' > campo 'titulo' > primer campo con valor
-  const titleField = 
-    piece.fieldValues.find((fv: any) => fv.field?.internalKey === 'nombre') ||
-    piece.fieldValues.find((fv: any) => fv.field?.internalKey === 'nombre_pieza') ||
-    piece.fieldValues.find((fv: any) => fv.field?.internalKey === 'titulo') ||
-    piece.fieldValues.find((fv: any) => fv.value && fv.value.trim() !== '')
-  const title = titleField?.value || piece.registryCode || 'Sin título'
+  // Prioridad: campo 'nombre' > campo 'titulo' > primer campo de texto con valor
+  let titleField = piece.fieldValues.find((fv: any) => {
+    const key = fv.field?.internalKey?.toLowerCase() || '';
+    const name = fv.field?.name?.toLowerCase() || '';
+    return ['nombre', 'nombre_pieza', 'titulo', 'título'].includes(key) ||
+           ['nombre', 'nombre de la pieza', 'titulo', 'título'].includes(name);
+  });
+
+  if (!titleField) {
+    titleField = piece.fieldValues.find((fv: any) => {
+      const name = fv.field?.name?.toLowerCase() || '';
+      return name.includes('nombre') || name.includes('titulo') || name.includes('título');
+    });
+  }
+
+  if (!titleField) {
+    titleField = piece.fieldValues.find((fv: any) => 
+      fv.value && fv.value.trim() !== '' && isNaN(Number(fv.value.trim()))
+    );
+  }
+
+  const rawTitle = titleField?.value || piece.registryCode || 'Sin título'
+  const title = rawTitle.replace(/\w\S*/g, (txt: string) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase())
 
   const imageField = piece.fieldValues.find((fv: any) => fv.field?.internalKey === 'imagen_principal')
   const mainImageUrl = imageField?.value || null

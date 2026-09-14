@@ -109,7 +109,8 @@ export default function PieceExplorer({ categories, pieces, userRole = 'VIEWER' 
       );
     }
 
-    return fv?.value || piece.registryCode || "Sin nombre"
+    const rawTitle = fv?.value || piece.registryCode || "Sin nombre"
+    return rawTitle.replace(/\w\S*/g, (txt: string) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase())
   }
 
   const handleDeleteConfirm = async () => {

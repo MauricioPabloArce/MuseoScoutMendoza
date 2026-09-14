@@ -27,7 +27,9 @@ export default function CatalogGrid({ pieces }: { pieces: any[] }) {
       );
     }
 
-    return { title: fv?.value || piece.registryCode || "Sin Título", fieldId: fv?.fieldId };
+    const rawTitle = fv?.value || piece.registryCode || "Sin Título"
+    const formattedTitle = rawTitle.replace(/\w\S*/g, (txt: string) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase())
+    return { title: formattedTitle, fieldId: fv?.fieldId };
   }
 
   const formatFieldValue = (fv: any) => {
