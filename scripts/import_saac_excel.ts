@@ -99,8 +99,9 @@ async function main() {
     where: {
       sectionId: mainSectionId,
       OR: [
+        { internalKey: 'norg' },
         { internalKey: { contains: 'organismo' } },
-        { name: { contains: 'organismo' } },
+        { name: { contains: 'rganismo' } },
         { internalKey: 'n' }
       ]
     }
