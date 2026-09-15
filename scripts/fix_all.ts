@@ -16,7 +16,7 @@ async function main() {
 
   // 1. Convertir Provincia a TEXT
   const provinciaField = await prisma.fieldDefinition.findFirst({
-    where: { categoryId: category.id, name: { contains: 'Provincia' } }
+    where: { name: { contains: 'Provincia' }, type: 'SELECT' }
   });
 
   if (provinciaField) {
