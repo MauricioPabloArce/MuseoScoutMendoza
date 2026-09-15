@@ -206,9 +206,21 @@ export default async function PieceDetailPage({ params }: { params: Promise<{ re
                         <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
                           {fv.field.name}
                         </span>
-                        <span className="text-gray-900 break-words whitespace-pre-wrap">
-                          {formatFieldValue(fv)}
-                        </span>
+                        {(fv.field?.type || 'TEXT').toUpperCase() === 'IMAGE' && fv.value ? (
+                          <div className="mt-2">
+                            <a href={fv.value} target="_blank" rel="noreferrer">
+                              <img 
+                                src={fv.value} 
+                                alt={fv.field.name} 
+                                className="max-w-full max-h-64 object-contain rounded-md shadow-sm border border-gray-300" 
+                              />
+                            </a>
+                          </div>
+                        ) : (
+                          <span className="text-gray-900 break-words whitespace-pre-wrap">
+                            {formatFieldValue(fv)}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
