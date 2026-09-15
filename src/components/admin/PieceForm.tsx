@@ -241,29 +241,56 @@ export default function PieceForm({
                       ) : field.type === 'IMAGE' ? (
                         <div className="flex flex-col gap-2">
                           {fieldValues[field.id] && !fileUploads[field.id] && (
-                            <img src={fieldValues[field.id]} className="h-24 w-auto object-cover border border-gray-200 rounded" />
-                          )}
-                          {fileUploads[field.id] && (
-                            <div className="text-xs text-green-700 font-medium bg-green-50 p-2 rounded">
-                              Archivo nuevo seleccionado: {fileUploads[field.id].name}
+                            <div className="flex flex-col items-start gap-1">
+                              <img src={fieldValues[field.id]} className="max-h-48 w-auto object-cover border border-gray-200 rounded shadow-sm" />
+                              <button
+                                type="button"
+                                onClick={() => handleFieldChange(field, "")}
+                                className="text-xs text-red-600 hover:text-red-800 font-medium"
+                              >
+                                Eliminar imagen actual
+                              </button>
                             </div>
                           )}
-                          <input 
-                            type="file" 
-                            accept="image/*"
-                            onChange={e => {
-                              const file = e.target.files?.[0]
-                              if (file) {
-                                if (file.size > 5 * 1024 * 1024) {
-                                  setShowSizeError(true)
-                                  e.target.value = ""
-                                  return
+                          {fileUploads[field.id] && (
+                            <div className="flex flex-col items-start gap-1">
+                              <div className="text-xs text-green-700 font-medium bg-green-50 p-2 rounded w-full">
+                                Archivo nuevo seleccionado: {fileUploads[field.id].name}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setFileUploads(prev => {
+                                    const newState = { ...prev }
+                                    delete newState[field.id]
+                                    return newState
+                                  })
+                                }}
+                                className="text-xs text-red-600 hover:text-red-800 font-medium px-1"
+                              >
+                                Cancelar selección
+                              </button>
+                            </div>
+                          )}
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs text-gray-500">{fieldValues[field.id] || fileUploads[field.id] ? "Cambiar por otra imagen:" : "Subir nueva imagen:"}</span>
+                            <input 
+                              type="file" 
+                              accept="image/*"
+                              onChange={e => {
+                                const file = e.target.files?.[0]
+                                if (file) {
+                                  if (file.size > 5 * 1024 * 1024) {
+                                    setShowSizeError(true)
+                                    e.target.value = ""
+                                    return
+                                  }
+                                  setFileUploads(prev => ({ ...prev, [field.id]: file }))
                                 }
-                                setFileUploads(prev => ({ ...prev, [field.id]: file }))
-                              }
-                            }}
-                            className="text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700"
-                          />
+                              }}
+                              className="text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700 cursor-pointer"
+                            />
+                          </div>
                         </div>
                       ) : field.type === 'BOOLEAN' ? (
                         <div className="flex items-center gap-3 h-10">
