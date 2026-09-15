@@ -82,7 +82,8 @@ async function main() {
     process.exit(1);
   }
 
-  const mainSectionId = category.sections[0].sectionId;
+  const sectionIds = category.sections.map(s => s.sectionId);
+  const mainSectionId = sectionIds[0];
 
   // 2. Preparar/Asegurar los campos dinámicos necesarios
   console.log("Asegurando campos dinámicos...");
@@ -97,7 +98,7 @@ async function main() {
   // Buscar el campo que actúa como "Número de Organismo"
   const orgField = await prisma.fieldDefinition.findFirst({
     where: {
-      sectionId: mainSectionId,
+      sectionId: { in: sectionIds },
       OR: [
         { internalKey: 'norg' },
         { internalKey: { contains: 'organismo' } },
