@@ -6,7 +6,12 @@ async function main() {
   console.log("Iniciando corrección de fechas de fundación...");
 
   const fields = await prisma.fieldDefinition.findMany({
-    where: { internalKey: 'fecha_fundacion' }
+    where: { 
+      OR: [
+        { name: { contains: 'Fundaci' } },
+        { internalKey: 'fecha_fundacion' }
+      ]
+    }
   });
 
   if (fields.length === 0) {
