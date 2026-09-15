@@ -167,8 +167,16 @@ async function main() {
       }
     };
 
-    const zona = row['Z']?.toString();
-    const distrito = row['D']?.toString();
+    let zona = row['Z']?.toString().trim();
+    if (zona && /^\d+$/.test(zona)) {
+      zona = zona.padStart(2, '0');
+    }
+
+    let distrito = row['D']?.toString().trim();
+    if (distrito && /^\d+$/.test(distrito)) {
+      distrito = distrito.padStart(2, '0');
+    }
+
     const domicilio = row['Domicilio']?.toString();
     const cp = row['CP']?.toString();
     let direccion = domicilio || '';
