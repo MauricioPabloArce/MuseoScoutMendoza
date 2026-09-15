@@ -41,6 +41,12 @@ export default function CatalogGrid({ pieces }: { pieces: any[] }) {
       const option = fv.field.options.find((opt: any) => opt.value === fv.value);
       return option ? option.label : fv.value;
     }
+    if (fv.field?.type === 'DATE' && fv.value) {
+      const parts = fv.value.split('-');
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+    }
     return fv.value;
   }
 

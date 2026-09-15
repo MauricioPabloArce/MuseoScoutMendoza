@@ -25,6 +25,14 @@ function formatFieldValue(fv: any): string {
     return found ? found.label : raw
   }
 
+  // Fecha
+  if (type === 'date') {
+    const parts = raw.split('-')
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`
+    }
+  }
+
   return raw
 }
 
