@@ -90,8 +90,7 @@ export default async function PieceDetailPage({ params }: { params: Promise<{ re
   const rawTitle = titleField?.value || piece.registryCode || 'Sin título'
   const title = rawTitle.replace(/\w\S*/g, (txt: string) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase())
 
-  const imageField = piece.fieldValues.find((fv: any) => fv.field?.internalKey === 'imagen_principal')
-  const mainImageUrl = imageField?.value || null
+  const imageFields = piece.fieldValues.filter((fv: any) => (fv.field?.type || 'TEXT').toUpperCase() === 'IMAGE' && fv.value)
 
   return (
     <div className="min-h-screen bg-[#eae6df] font-sans pb-20">
@@ -109,22 +108,26 @@ export default async function PieceDetailPage({ params }: { params: Promise<{ re
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row border border-[#d5cdbc]">
           {/* Columna Imágenes */}
           <div className="w-full md:w-1/2 bg-gray-100 flex flex-col items-center justify-center p-8 border-b md:border-b-0 md:border-r border-[#d5cdbc] min-h-[400px]">
-            {mainImageUrl || (piece.media && piece.media.length > 0) ? (
+            {imageFields.length > 0 || (piece.media && piece.media.length > 0) ? (
               <div className="space-y-6 w-full flex flex-col items-center">
-                {mainImageUrl && (
-                  <img 
-                    src={mainImageUrl} 
-                    alt={title} 
-                    className="max-w-full max-h-[600px] object-contain drop-shadow-xl border-4 border-white"
-                  />
-                )}
+                {imageFields.map((fv: any, index: number) => (
+                  <div key={fv.id} className="flex flex-col items-center w-full">
+                    <img 
+                      src={fv.value} 
+                      alt={`${fv.field.name}`} 
+                      className="max-w-full max-h-[600px] object-contain drop-shadow-xl border-4 border-white"
+                    />
+                    <span className="text-sm text-gray-500 mt-2 font-medium bg-white px-3 py-1 rounded-full shadow-sm">{fv.field.name}</span>
+                  </div>
+                ))}
                 {piece.media && piece.media.map((m, index) => (
-                  <img 
-                    key={m.id}
-                    src={m.url} 
-                    alt={`${title} - Imagen adicional ${index + 1}`} 
-                    className="max-w-full max-h-[600px] object-contain drop-shadow-xl border-4 border-white"
-                  />
+                  <div key={m.id} className="flex flex-col items-center w-full">
+                    <img 
+                      src={m.url} 
+                      alt={`${title} - Imagen adicional ${index + 1}`} 
+                      className="max-w-full max-h-[600px] object-contain drop-shadow-xl border-4 border-white"
+                    />
+                  </div>
                 ))}
               </div>
             ) : (
@@ -187,7 +190,7 @@ export default async function PieceDetailPage({ params }: { params: Promise<{ re
                       fv.value.trim() !== '' && 
                       fv.field?.name &&
                       fv.id !== titleField?.id && 
-                      fv.id !== imageField?.id
+                      (fv.field?.type || 'TEXT').toUpperCase() !== 'IMAGE'
                     )
                     .reduce((acc: Record<string, any[]>, fv: any) => {
                       const sectionName = fv.field.section?.name || (fv.field.isGeneral ? 'Datos generales' : 'Datos específicos')
@@ -206,21 +209,9 @@ export default async function PieceDetailPage({ params }: { params: Promise<{ re
                         <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
                           {fv.field.name}
                         </span>
-                        {(fv.field?.type || 'TEXT').toUpperCase() === 'IMAGE' && fv.value ? (
-                          <div className="mt-2">
-                            <a href={fv.value} target="_blank" rel="noreferrer">
-                              <img 
-                                src={fv.value} 
-                                alt={fv.field.name} 
-                                className="max-w-full max-h-64 object-contain rounded-md shadow-sm border border-gray-300" 
-                              />
-                            </a>
-                          </div>
-                        ) : (
-                          <span className="text-gray-900 break-words whitespace-pre-wrap">
-                            {formatFieldValue(fv)}
-                          </span>
-                        )}
+                        <span className="text-gray-900 break-words whitespace-pre-wrap">
+                          {formatFieldValue(fv)}
+                        </span>
                       </div>
                     ))}
                   </div>
