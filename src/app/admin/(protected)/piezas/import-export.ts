@@ -3,7 +3,7 @@
 import prisma from "@/lib/prisma"
 import { auth } from "@/auth"
 import * as xlsx from 'xlsx'
-import { generateRegistryCode } from "./actions"
+import { generateRegistryCode, getFieldsForCategory } from "./actions"
 
 // Helper para validar permisos
 async function checkAdminOrCollab() {
@@ -30,19 +30,7 @@ export async function exportPieces(categoryId: string, filterBy: 'ALL' | 'FILTER
   if (!category) throw new Error("Categoría no encontrada")
   if (category.children.length > 0) throw new Error("Solo se pueden exportar categorías hoja")
 
-  // Obtener campos de esta categoría (Estructurales implícitos, luego los de secciones)
-  const categorySections = await prisma.categorySection.findMany({
-    where: { categoryId },
-    select: { sectionId: true, order: true },
-    orderBy: { order: 'asc' }
-  })
-  
-  const sectionIds = categorySections.map(cs => cs.sectionId)
-  
-  const fields = await prisma.fieldDefinition.findMany({
-    where: { sectionId: { in: sectionIds }, isActive: true },
-    include: { options: { orderBy: { order: 'asc' } } }
-  })
+  const fields = await getFieldsForCategory(categoryId)
 
   // Obtener piezas
   const pieces = await prisma.museumPiece.findMany({
@@ -120,15 +108,7 @@ export async function generateTemplate(categoryId: string) {
   if (!category) throw new Error("Categoría no encontrada")
   if (category.children.length > 0) throw new Error("Solo se puede generar plantilla para categorías hoja")
 
-  const categorySections = await prisma.categorySection.findMany({
-    where: { categoryId },
-    select: { sectionId: true }
-  })
-  
-  const fields = await prisma.fieldDefinition.findMany({
-    where: { sectionId: { in: categorySections.map(c => c.sectionId) }, isActive: true },
-    include: { options: { orderBy: { order: 'asc' } } }
-  })
+  const fields = await getFieldsForCategory(categoryId)
 
   const wb = xlsx.utils.book_new()
   
