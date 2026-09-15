@@ -184,8 +184,8 @@ async function main() {
       direccion += ` CP: ${cp}`;
     }
     const fundacion = row['A fundacion']?.toString();
-    const localidad = row['LOCALIDAD']?.toString();
-    const provincia = row['PROVINCIA']?.toString();
+    const localidad = (row['Localidad'] ?? row['LOCALIDAD'])?.toString();
+    const provincia = (row['Provincia'] ?? row['PROVINCIA'])?.toString();
     
     // Condicion: Si dice baja es NO si no dice nada es ALTA
     let activo = "ALTA";
