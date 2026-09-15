@@ -49,7 +49,9 @@ export default function CatalogGrid({ pieces }: { pieces: any[] }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {pieces.map(piece => {
           const { title } = getPieceTitle(piece)
-          const imageUrl = piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'imagen_principal')?.value || piece.media?.[0]?.url
+          const imageUrl = piece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'imagen_principal')?.value 
+            || piece.fieldValues?.find((fv: any) => (fv.field?.type || 'TEXT').toUpperCase() === 'IMAGE' && fv.value)?.value 
+            || piece.media?.[0]?.url
 
           return (
           <div 
@@ -100,7 +102,9 @@ export default function CatalogGrid({ pieces }: { pieces: any[] }) {
               <div className="w-full md:w-1/2 bg-gray-100 flex-shrink-0 relative overflow-hidden flex items-center justify-center h-64 md:h-auto min-h-[300px]">
                 {(() => {
                   const { title } = getPieceTitle(selectedPiece)
-                  const imageUrl = selectedPiece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'imagen_principal')?.value || selectedPiece.media?.[0]?.url
+                  const imageUrl = selectedPiece.fieldValues?.find((fv: any) => fv.field?.internalKey === 'imagen_principal')?.value 
+                    || selectedPiece.fieldValues?.find((fv: any) => (fv.field?.type || 'TEXT').toUpperCase() === 'IMAGE' && fv.value)?.value 
+                    || selectedPiece.media?.[0]?.url
                   
                   return imageUrl ? (
                     <img 
@@ -150,7 +154,7 @@ export default function CatalogGrid({ pieces }: { pieces: any[] }) {
 
                         return sortedFieldValues.map((fv: any) => {
                           const titleFieldId = getPieceTitle(selectedPiece).fieldId;
-                          if (fv.field?.internalKey === 'imagen_principal' || fv.fieldId === titleFieldId) return null;
+                          if (fv.field?.internalKey === 'imagen_principal' || fv.fieldId === titleFieldId || (fv.field?.type || 'TEXT').toUpperCase() === 'IMAGE') return null;
                           
                           return (
                             <div key={fv.id} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
