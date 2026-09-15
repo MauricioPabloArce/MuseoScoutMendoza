@@ -30,17 +30,22 @@ export async function getPiecesPaginated(page = 1, pageSize = 20, categoryId?: s
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * pageSize,
       take: pageSize,
-      include: {
-        category: true,
+      select: {
+        id: true,
+        registryCode: true,
+        categoryId: true,
+        status: true,
         fieldValues: {
-          include: { 
+          select: {
+            value: true,
             field: {
-              include: { options: true }
+              select: {
+                name: true,
+                internalKey: true
+              }
             }
           }
-        },
-        media: true,
-        donor: true
+        }
       }
     }),
     prisma.museumPiece.count({ where })
