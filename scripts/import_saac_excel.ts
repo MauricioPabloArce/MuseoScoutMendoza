@@ -9,15 +9,15 @@ function normalizeString(str: string) {
   return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
 
-async function getOrCreateField(sectionId: string, name: string, internalKey: string, type = 'TEXT') {
+async function getOrCreateField(sectionIds: string[], mainSectionId: string, name: string, internalKey: string, type = 'TEXT') {
   let field = await prisma.fieldDefinition.findFirst({
-    where: { sectionId, internalKey }
+    where: { sectionId: { in: sectionIds }, internalKey }
   });
 
   if (!field) {
     // try finding by name just in case
     field = await prisma.fieldDefinition.findFirst({
-      where: { sectionId, name: { contains: name } }
+      where: { sectionId: { in: sectionIds }, name: { contains: name } }
     });
   }
 
@@ -28,7 +28,7 @@ async function getOrCreateField(sectionId: string, name: string, internalKey: st
         name,
         internalKey,
         type,
-        sectionId,
+        sectionId: mainSectionId,
         isPublic: true,
         isSearchable: true,
       }
@@ -87,13 +87,13 @@ async function main() {
 
   // 2. Preparar/Asegurar los campos dinámicos necesarios
   console.log("Asegurando campos dinámicos...");
-  const fieldZona = await getOrCreateField(mainSectionId, 'Zona', 'zona');
-  const fieldDistrito = await getOrCreateField(mainSectionId, 'Distrito', 'distrito');
-  const fieldDireccion = await getOrCreateField(mainSectionId, 'Dirección', 'direccion');
-  const fieldFundacion = await getOrCreateField(mainSectionId, 'Fecha de fundación', 'fecha_fundacion');
-  const fieldLocalidad = await getOrCreateField(mainSectionId, 'Localidad', 'localidad');
-  const fieldProvincia = await getOrCreateField(mainSectionId, 'Provincia', 'provincia');
-  const fieldActivo = await getOrCreateField(mainSectionId, 'Activo', 'activo', 'TEXT');
+  const fieldZona = await getOrCreateField(sectionIds, mainSectionId, 'Zona', 'zona');
+  const fieldDistrito = await getOrCreateField(sectionIds, mainSectionId, 'Distrito', 'distrito');
+  const fieldDireccion = await getOrCreateField(sectionIds, mainSectionId, 'Dirección', 'direccion');
+  const fieldFundacion = await getOrCreateField(sectionIds, mainSectionId, 'Fecha de fundación', 'fecha_fundacion');
+  const fieldLocalidad = await getOrCreateField(sectionIds, mainSectionId, 'Localidad', 'localidad');
+  const fieldProvincia = await getOrCreateField(sectionIds, mainSectionId, 'Provincia', 'provincia');
+  const fieldActivo = await getOrCreateField(sectionIds, mainSectionId, 'Activo', 'activo', 'TEXT');
 
   // Buscar el campo que actúa como "Número de Organismo"
   const orgField = await prisma.fieldDefinition.findFirst({
