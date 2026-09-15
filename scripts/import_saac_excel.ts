@@ -188,10 +188,25 @@ async function main() {
       activo = row['Condicion'].toString();
     }
 
+    // Extraer y formatear fecha de fundación si es un número de Excel
+    let fundacionVal = row['A fundacion'] ?? row['A fundation'];
+    if (fundacionVal !== undefined && fundacionVal !== null) {
+      if (typeof fundacionVal === 'number' || /^\d+$/.test(fundacionVal.toString())) {
+        const serial = parseInt(fundacionVal.toString(), 10);
+        if (serial > 1000) { // asumiendo que un serial válido es mayor a 1000 (año ~1902)
+          const epoch = new Date(1899, 11, 30);
+          const date = new Date(epoch.getTime() + serial * 86400000);
+          fundacionVal = date.toLocaleDateString('es-AR', {
+            day: '2-digit', month: '2-digit', year: 'numeric'
+          });
+        }
+      }
+    }
+
     await upsertField(fieldZona.id, zona);
     await upsertField(fieldDistrito.id, distrito);
     await upsertField(fieldDireccion.id, direccion);
-    await upsertField(fieldFundacion.id, fundacion);
+    await upsertField(fieldFundacion.id, fundacionVal);
     await upsertField(fieldLocalidad.id, localidad);
     await upsertField(fieldProvincia.id, provincia);
     await upsertField(fieldActivo.id, activo);
