@@ -254,6 +254,11 @@ export default function PieceForm({
                           )}
                           {fileUploads[field.id] && (
                             <div className="flex flex-col items-start gap-1">
+                              <img 
+                                src={URL.createObjectURL(fileUploads[field.id])} 
+                                className="max-h-48 w-auto object-cover border border-gray-200 rounded shadow-sm opacity-80" 
+                                alt="Vista previa"
+                              />
                               <div className="text-xs text-green-700 font-medium bg-green-50 p-2 rounded w-full">
                                 Archivo nuevo seleccionado: {fileUploads[field.id].name}
                               </div>
