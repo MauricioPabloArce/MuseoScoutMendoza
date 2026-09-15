@@ -2,6 +2,23 @@ import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import SidebarNav from "@/components/admin/SidebarNav"
 import Image from "next/image"
+import localFont from "next/font/local"
+
+const heroFont = localFont({
+  src: [
+    {
+      path: '../../../../public/fonts/Hero.otf',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: '../../../../public/fonts/Hero Light.otf',
+      weight: '300',
+      style: 'normal',
+    }
+  ],
+  variable: '--font-hero'
+})
 
 export default async function AdminLayout({
   children,
@@ -9,7 +26,7 @@ export default async function AdminLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className={`min-h-screen bg-gray-50 flex ${heroFont.className}`}>
       <aside className="w-64 bg-[#1f2937] text-white hidden md:flex flex-col flex-shrink-0 sticky top-0 h-screen overflow-y-auto custom-scrollbar">
         <div className="p-4 border-b border-[#374151] flex flex-col items-center text-center shrink-0">
           <img src="/logo.png" alt="Museo Scout Mendoza" className="w-16 h-16 object-contain mb-3" />
