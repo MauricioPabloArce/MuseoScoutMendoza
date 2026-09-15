@@ -158,21 +158,39 @@ export default function CatalogGrid({ pieces }: { pieces: any[] }) {
                           return (a.field.order || 0) - (b.field.order || 0)
                         })
 
-                        return sortedFieldValues.map((fv: any) => {
-                          const titleFieldId = getPieceTitle(selectedPiece).fieldId;
-                          if (fv.field?.internalKey === 'imagen_principal' || fv.fieldId === titleFieldId || (fv.field?.type || 'TEXT').toUpperCase() === 'IMAGE') return null;
-                          
-                          return (
-                            <div key={fv.id} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                              <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                                {fv.field?.name || "Desconocido"}
-                              </span>
-                              <span className="text-gray-800 break-words">
-                                {formatFieldValue(fv)}
-                              </span>
+                        const groupedFields = sortedFieldValues
+                          .filter((fv: any) => {
+                            const titleFieldId = getPieceTitle(selectedPiece).fieldId;
+                            return fv.value && 
+                                   fv.value.trim() !== '' && 
+                                   fv.field?.internalKey !== 'imagen_principal' && 
+                                   fv.fieldId !== titleFieldId && 
+                                   (fv.field?.type || 'TEXT').toUpperCase() !== 'IMAGE';
+                          })
+                          .reduce((acc: Record<string, any[]>, fv: any) => {
+                            const sectionName = fv.field?.section?.name || (fv.field?.isGeneral ? 'Datos generales' : 'Datos específicos');
+                            if (!acc[sectionName]) acc[sectionName] = [];
+                            acc[sectionName].push(fv);
+                            return acc;
+                          }, {});
+
+                        return Object.entries(groupedFields).map(([sectionName, values]) => (
+                          <div key={sectionName} className="mb-4">
+                            <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2 border-b border-gray-200 pb-1">{sectionName}</h4>
+                            <div className="grid grid-cols-1 gap-y-3">
+                              {(values as any[]).map((fv: any) => (
+                                <div key={fv.id} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                  <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                                    {fv.field?.name || "Desconocido"}
+                                  </span>
+                                  <span className="text-gray-800 break-words">
+                                    {formatFieldValue(fv)}
+                                  </span>
+                                </div>
+                              ))}
                             </div>
-                          )
-                        })
+                          </div>
+                        ));
                       })()}
                     </div>
                   ) : (
