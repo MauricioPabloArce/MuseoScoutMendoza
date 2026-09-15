@@ -68,15 +68,14 @@ async function main() {
   for (const file of files) {
     // Tomar los 4 primeros caracteres
     const first4 = file.substring(0, 4);
-    // Parsear como entero para quitar ceros a la izquierda (0033 -> 33)
-    const num = parseInt(first4, 10);
     
-    if (isNaN(num)) {
-      console.log(`⚠️ Ignorando archivo '${file}' (los 4 primeros caracteres '${first4}' no son un número)`);
+    // Validar que los 4 caracteres sean realmente números
+    if (!/^\d{4}$/.test(first4)) {
+      console.log(`⚠️ Ignorando archivo '${file}' (los 4 primeros caracteres '${first4}' no son un número de 4 dígitos)`);
       continue;
     }
     
-    const orgNumStr = num.toString();
+    const orgNumStr = first4;
     if (!groupedFiles[orgNumStr]) {
       groupedFiles[orgNumStr] = [];
     }
